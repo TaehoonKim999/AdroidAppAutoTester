@@ -1,0 +1,235 @@
+{
+  "test_date": "2026-02-04 16:08:04",
+  "device_info": "XIG02 (e60d690d0721)",
+  "total_tests": 14,
+  "successful_tests": 0,
+  "failed_tests": 14,
+  "success_rate": 0.0,
+  "total_duration": 36.92746615409851,
+  "test_results": [
+    {
+      "app_name": "Steadycam",
+      "package": "com.dfd365.steadycam",
+      "success": false,
+      "duration": 3.0744011402130127,
+      "screens_visited": 0,
+      "elements_interacted": 0,
+      "actions_performed": [],
+      "errors_found": [],
+      "log_file": "/home/ofj/dfd365/05_AndroidAppAutoTester/logs/logcat_com.dfd365.steadycam_20260204_160727.txt",
+      "screenshot_files": [
+        "/home/ofj/dfd365/05_AndroidAppAutoTester/screenshots/Steadycam_error_attempt0_20260204_160727.png"
+      ],
+      "retry_count": 0,
+      "error_message": "'int' object is not iterable"
+    },
+    {
+      "app_name": "\uae09\uc218\ubcc4 \ud55c\uc790\ud559\uc2b5",
+      "package": "com.nathankim.hanja_learning",
+      "success": false,
+      "duration": 2.798593759536743,
+      "screens_visited": 0,
+      "elements_interacted": 0,
+      "actions_performed": [],
+      "errors_found": [],
+      "log_file": "/home/ofj/dfd365/05_AndroidAppAutoTester/logs/logcat_com.nathankim.hanja_learning_20260204_160730.txt",
+      "screenshot_files": [
+        "/home/ofj/dfd365/05_AndroidAppAutoTester/screenshots/\uae09\uc218\ubcc4 \ud55c\uc790\ud559\uc2b5_error_attempt0_20260204_160730.png"
+      ],
+      "retry_count": 0,
+      "error_message": "'int' object is not iterable"
+    },
+    {
+      "app_name": "\ub098\ub9cc\uc758 \ub2e8\uc704 \uacc4\uc0b0\uae30",
+      "package": "com.tha.unitcalc",
+      "success": false,
+      "duration": 2.600637912750244,
+      "screens_visited": 0,
+      "elements_interacted": 0,
+      "actions_performed": [],
+      "errors_found": [],
+      "log_file": "/home/ofj/dfd365/05_AndroidAppAutoTester/logs/logcat_com.tha.unitcalc_20260204_160733.txt",
+      "screenshot_files": [
+        "/home/ofj/dfd365/05_AndroidAppAutoTester/screenshots/\ub098\ub9cc\uc758 \ub2e8\uc704 \uacc4\uc0b0\uae30_error_attempt0_20260204_160733.png"
+      ],
+      "retry_count": 0,
+      "error_message": "'int' object is not iterable"
+    },
+    {
+      "app_name": "\ub208\uc73c\ub85c \ubcf4\ub294 \uacfc\ud559",
+      "package": "com.sciencelab.science_lab_flutter",
+      "success": false,
+      "duration": 2.533511161804199,
+      "screens_visited": 0,
+      "elements_interacted": 0,
+      "actions_performed": [],
+      "errors_found": [],
+      "log_file": "/home/ofj/dfd365/05_AndroidAppAutoTester/logs/logcat_com.sciencelab.science_lab_flutter_20260204_160736.txt",
+      "screenshot_files": [
+        "/home/ofj/dfd365/05_AndroidAppAutoTester/screenshots/\ub208\uc73c\ub85c \ubcf4\ub294 \uacfc\ud559_error_attempt0_20260204_160736.png"
+      ],
+      "retry_count": 0,
+      "error_message": "'int' object is not iterable"
+    },
+    {
+      "app_name": "\ub9c8\uc791 \uc871\ubcf4 \ub9cc\ub4e4\uae30",
+      "package": "com.jin_kor.mahjongyakumaker",
+      "success": false,
+      "duration": 2.719738483428955,
+      "screens_visited": 0,
+      "elements_interacted": 0,
+      "actions_performed": [],
+      "errors_found": [],
+      "log_file": "/home/ofj/dfd365/05_AndroidAppAutoTester/logs/logcat_com.jin_kor.mahjongyakumaker_20260204_160739.txt",
+      "screenshot_files": [
+        "/home/ofj/dfd365/05_AndroidAppAutoTester/screenshots/\ub9c8\uc791 \uc871\ubcf4 \ub9cc\ub4e4\uae30_error_attempt0_20260204_160739.png"
+      ],
+      "retry_count": 0,
+      "error_message": "'int' object is not iterable"
+    },
+    {
+      "app_name": "\ubcf5\ub9ac\uc758 \ub9c8\ubc95",
+      "package": "com.compoundinterestmagic",
+      "success": false,
+      "duration": 2.616320848464966,
+      "screens_visited": 0,
+      "elements_interacted": 0,
+      "actions_performed": [],
+      "errors_found": [],
+      "log_file": "/home/ofj/dfd365/05_AndroidAppAutoTester/logs/logcat_com.compoundinterestmagic_20260204_160742.txt",
+      "screenshot_files": [
+        "/home/ofj/dfd365/05_AndroidAppAutoTester/screenshots/\ubcf5\ub9ac\uc758 \ub9c8\ubc95_error_attempt0_20260204_160742.png"
+      ],
+      "retry_count": 0,
+      "error_message": "'int' object is not iterable"
+    },
+    {
+      "app_name": "\uc18c\ubaa8\ubbf8",
+      "package": "com.nextstory.somomi",
+      "success": false,
+      "duration": 2.4953880310058594,
+      "screens_visited": 0,
+      "elements_interacted": 0,
+      "actions_performed": [],
+      "errors_found": [],
+      "log_file": "/home/ofj/dfd365/05_AndroidAppAutoTester/logs/logcat_com.nextstory.somomi_20260204_160744.txt",
+      "screenshot_files": [
+        "/home/ofj/dfd365/05_AndroidAppAutoTester/screenshots/\uc18c\ubaa8\ubbf8_error_attempt0_20260204_160744.png"
+      ],
+      "retry_count": 0,
+      "error_message": "'int' object is not iterable"
+    },
+    {
+      "app_name": "\uc815\uac01 \uc54c\ub9ac\ubbf8",
+      "package": "com.dive.myclockalarm1",
+      "success": false,
+      "duration": 2.5068769454956055,
+      "screens_visited": 0,
+      "elements_interacted": 0,
+      "actions_performed": [],
+      "errors_found": [],
+      "log_file": "/home/ofj/dfd365/05_AndroidAppAutoTester/logs/logcat_com.dive.myclockalarm1_20260204_160747.txt",
+      "screenshot_files": [
+        "/home/ofj/dfd365/05_AndroidAppAutoTester/screenshots/\uc815\uac01 \uc54c\ub9ac\ubbf8_error_attempt0_20260204_160747.png"
+      ],
+      "retry_count": 0,
+      "error_message": "'int' object is not iterable"
+    },
+    {
+      "app_name": "\ud06c\ub85c\uc2a4\ud54f \uad6c\uc6d4",
+      "package": "com.jiseong.crossfitguwol",
+      "success": false,
+      "duration": 2.475050210952759,
+      "screens_visited": 0,
+      "elements_interacted": 0,
+      "actions_performed": [],
+      "errors_found": [],
+      "log_file": "/home/ofj/dfd365/05_AndroidAppAutoTester/logs/logcat_com.jiseong.crossfitguwol_20260204_160749.txt",
+      "screenshot_files": [
+        "/home/ofj/dfd365/05_AndroidAppAutoTester/screenshots/\ud06c\ub85c\uc2a4\ud54f \uad6c\uc6d4_error_attempt0_20260204_160750.png"
+      ],
+      "retry_count": 0,
+      "error_message": "'int' object is not iterable"
+    },
+    {
+      "app_name": "\ud63c\uc220\uc758 \uc628\ub3c4",
+      "package": "com.atomostudio.honsoolondo",
+      "success": false,
+      "duration": 2.5097131729125977,
+      "screens_visited": 0,
+      "elements_interacted": 0,
+      "actions_performed": [],
+      "errors_found": [],
+      "log_file": "/home/ofj/dfd365/05_AndroidAppAutoTester/logs/logcat_com.atomostudio.honsoolondo_20260204_160752.txt",
+      "screenshot_files": [
+        "/home/ofj/dfd365/05_AndroidAppAutoTester/screenshots/\ud63c\uc220\uc758 \uc628\ub3c4_error_attempt0_20260204_160752.png"
+      ],
+      "retry_count": 0,
+      "error_message": "'int' object is not iterable"
+    },
+    {
+      "app_name": "PagePick",
+      "package": "com.sanghyun01.PagePick",
+      "success": false,
+      "duration": 2.5431270599365234,
+      "screens_visited": 0,
+      "elements_interacted": 0,
+      "actions_performed": [],
+      "errors_found": [],
+      "log_file": "/home/ofj/dfd365/05_AndroidAppAutoTester/logs/logcat_com.sanghyun01.PagePick_20260204_160755.txt",
+      "screenshot_files": [
+        "/home/ofj/dfd365/05_AndroidAppAutoTester/screenshots/PagePick_error_attempt0_20260204_160755.png"
+      ],
+      "retry_count": 0,
+      "error_message": "'int' object is not iterable"
+    },
+    {
+      "app_name": "MemoryMap",
+      "package": "com.taesujung.memorymap",
+      "success": false,
+      "duration": 2.5728187561035156,
+      "screens_visited": 0,
+      "elements_interacted": 0,
+      "actions_performed": [],
+      "errors_found": [],
+      "log_file": "/home/ofj/dfd365/05_AndroidAppAutoTester/logs/logcat_com.taesujung.memorymap_20260204_160758.txt",
+      "screenshot_files": [
+        "/home/ofj/dfd365/05_AndroidAppAutoTester/screenshots/MemoryMap_error_attempt0_20260204_160758.png"
+      ],
+      "retry_count": 0,
+      "error_message": "'int' object is not iterable"
+    },
+    {
+      "app_name": "Math Poker Challenge",
+      "package": "com.jin_kor.mathpokerchallenge",
+      "success": false,
+      "duration": 2.554248571395874,
+      "screens_visited": 0,
+      "elements_interacted": 0,
+      "actions_performed": [],
+      "errors_found": [],
+      "log_file": "/home/ofj/dfd365/05_AndroidAppAutoTester/logs/logcat_com.jin_kor.mathpokerchallenge_20260204_160800.txt",
+      "screenshot_files": [
+        "/home/ofj/dfd365/05_AndroidAppAutoTester/screenshots/Math Poker Challenge_error_attempt0_20260204_160800.png"
+      ],
+      "retry_count": 0,
+      "error_message": "'int' object is not iterable"
+    },
+    {
+      "app_name": "Rimwatcher",
+      "package": "nuller.rimwatcher",
+      "success": false,
+      "duration": 2.9270401000976562,
+      "screens_visited": 0,
+      "elements_interacted": 0,
+      "actions_performed": [],
+      "errors_found": [],
+      "log_file": "/home/ofj/dfd365/05_AndroidAppAutoTester/logs/logcat_nuller.rimwatcher_20260204_160803.txt",
+      "screenshot_files": [
+        "/home/ofj/dfd365/05_AndroidAppAutoTester/screenshots/Rimwatcher_error_attempt0_20260204_160803.png"
+      ],
+      "retry_count": 0,
+      "error_message": "'int' object is not iterable"
+    }
+  ]
+}

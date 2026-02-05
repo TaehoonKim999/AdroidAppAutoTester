@@ -1,0 +1,727 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Report - 2026-02-04 16:17:38</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        .summary {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .summary h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .summary-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .summary-card .value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        .summary-card .label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .test-result {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #4CAF50;
+        }
+        .test-result.fail {
+            border-left-color: #F44336;
+        }
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .result-header h3 {
+            color: #333;
+        }
+        .status {
+            font-size: 1.5em;
+        }
+        .result-details {
+            margin-top: 15px;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .label {
+            font-weight: 600;
+            color: #666;
+        }
+        .value {
+            color: #333;
+        }
+        .value.pass {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .value.fail {
+            color: #F44336;
+            font-weight: bold;
+        }
+        .errors-list {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .error-item {
+            color: #856404;
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        .error-item:before {
+            content: "•";
+            position: absolute;
+            left: 5px;
+        }
+        .error-message {
+            color: #F44336;
+            font-weight: 600;
+        }
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📱 Android App Automatic Test Report</h1>
+            <p>Generated on 2026-02-04 16:17:38</p>
+        </header>
+        
+        <div class="summary">
+            <h2>📊 Summary</h2>
+            <p><strong>Device:</strong> XIG02 (e60d690d0721)</p>
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <div class="value">14</div>
+                    <div class="label">Total Tests</div>
+                </div>
+                <div class="summary-card">
+                    <div class="value" style="color: #4CAF50">0</div>
+                    <div class="label">Successful ✅</div>
+                </div>
+                <div class="summary-card">
+                    <div class="value" style="color: #F44336">14</div>
+                    <div class="label">Failed ❌</div>
+                </div>
+                <div class="summary-card">
+                    <div class="value">0.0%</div>
+                    <div class="label">Success Rate</div>
+                </div>
+                <div class="summary-card">
+                    <div class="value">37s</div>
+                    <div class="label">Duration</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-results">
+            <h2 style="color: #667eea; margin-bottom: 20px;">📋 Test Results</h2>
+            
+            <div class="test-result">
+                <div class="result-header">
+                    <h3>Steadycam</h3>
+                    <span class="status fail">❌</span>
+                </div>
+                <div class="result-details">
+                    <div class="detail-row">
+                        <span class="label">Package:</span>
+                        <span class="value">com.dfd365.steadycam</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Status:</span>
+                        <span class="value fail">
+                            FAIL
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Duration:</span>
+                        <span class="value">3.15s</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Screens:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Elements:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Actions:</span>
+                        <span class="value">0</span>
+                    </div>
+            
+                    <div class="detail-row">
+                        <span class="label">Message:</span>
+                        <span class="value error-message">'int' object is not iterable</span>
+                    </div>
+            </div></div>
+            <div class="test-result">
+                <div class="result-header">
+                    <h3>급수별 한자학습</h3>
+                    <span class="status fail">❌</span>
+                </div>
+                <div class="result-details">
+                    <div class="detail-row">
+                        <span class="label">Package:</span>
+                        <span class="value">com.nathankim.hanja_learning</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Status:</span>
+                        <span class="value fail">
+                            FAIL
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Duration:</span>
+                        <span class="value">2.69s</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Screens:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Elements:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Actions:</span>
+                        <span class="value">0</span>
+                    </div>
+            
+                    <div class="detail-row">
+                        <span class="label">Message:</span>
+                        <span class="value error-message">'int' object is not iterable</span>
+                    </div>
+            </div></div>
+            <div class="test-result">
+                <div class="result-header">
+                    <h3>나만의 단위 계산기</h3>
+                    <span class="status fail">❌</span>
+                </div>
+                <div class="result-details">
+                    <div class="detail-row">
+                        <span class="label">Package:</span>
+                        <span class="value">com.tha.unitcalc</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Status:</span>
+                        <span class="value fail">
+                            FAIL
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Duration:</span>
+                        <span class="value">2.64s</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Screens:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Elements:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Actions:</span>
+                        <span class="value">0</span>
+                    </div>
+            
+                    <div class="detail-row">
+                        <span class="label">Message:</span>
+                        <span class="value error-message">'int' object is not iterable</span>
+                    </div>
+            </div></div>
+            <div class="test-result">
+                <div class="result-header">
+                    <h3>눈으로 보는 과학</h3>
+                    <span class="status fail">❌</span>
+                </div>
+                <div class="result-details">
+                    <div class="detail-row">
+                        <span class="label">Package:</span>
+                        <span class="value">com.sciencelab.science_lab_flutter</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Status:</span>
+                        <span class="value fail">
+                            FAIL
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Duration:</span>
+                        <span class="value">2.59s</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Screens:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Elements:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Actions:</span>
+                        <span class="value">0</span>
+                    </div>
+            
+                    <div class="detail-row">
+                        <span class="label">Message:</span>
+                        <span class="value error-message">'int' object is not iterable</span>
+                    </div>
+            </div></div>
+            <div class="test-result">
+                <div class="result-header">
+                    <h3>마작 족보 만들기</h3>
+                    <span class="status fail">❌</span>
+                </div>
+                <div class="result-details">
+                    <div class="detail-row">
+                        <span class="label">Package:</span>
+                        <span class="value">com.jin_kor.mahjongyakumaker</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Status:</span>
+                        <span class="value fail">
+                            FAIL
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Duration:</span>
+                        <span class="value">2.57s</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Screens:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Elements:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Actions:</span>
+                        <span class="value">0</span>
+                    </div>
+            
+                    <div class="detail-row">
+                        <span class="label">Message:</span>
+                        <span class="value error-message">'int' object is not iterable</span>
+                    </div>
+            </div></div>
+            <div class="test-result">
+                <div class="result-header">
+                    <h3>복리의 마법</h3>
+                    <span class="status fail">❌</span>
+                </div>
+                <div class="result-details">
+                    <div class="detail-row">
+                        <span class="label">Package:</span>
+                        <span class="value">com.compoundinterestmagic</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Status:</span>
+                        <span class="value fail">
+                            FAIL
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Duration:</span>
+                        <span class="value">2.59s</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Screens:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Elements:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Actions:</span>
+                        <span class="value">0</span>
+                    </div>
+            
+                    <div class="detail-row">
+                        <span class="label">Message:</span>
+                        <span class="value error-message">'int' object is not iterable</span>
+                    </div>
+            </div></div>
+            <div class="test-result">
+                <div class="result-header">
+                    <h3>소모미</h3>
+                    <span class="status fail">❌</span>
+                </div>
+                <div class="result-details">
+                    <div class="detail-row">
+                        <span class="label">Package:</span>
+                        <span class="value">com.nextstory.somomi</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Status:</span>
+                        <span class="value fail">
+                            FAIL
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Duration:</span>
+                        <span class="value">2.50s</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Screens:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Elements:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Actions:</span>
+                        <span class="value">0</span>
+                    </div>
+            
+                    <div class="detail-row">
+                        <span class="label">Message:</span>
+                        <span class="value error-message">'int' object is not iterable</span>
+                    </div>
+            </div></div>
+            <div class="test-result">
+                <div class="result-header">
+                    <h3>정각 알리미</h3>
+                    <span class="status fail">❌</span>
+                </div>
+                <div class="result-details">
+                    <div class="detail-row">
+                        <span class="label">Package:</span>
+                        <span class="value">com.dive.myclockalarm1</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Status:</span>
+                        <span class="value fail">
+                            FAIL
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Duration:</span>
+                        <span class="value">2.49s</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Screens:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Elements:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Actions:</span>
+                        <span class="value">0</span>
+                    </div>
+            
+                    <div class="detail-row">
+                        <span class="label">Message:</span>
+                        <span class="value error-message">'int' object is not iterable</span>
+                    </div>
+            </div></div>
+            <div class="test-result">
+                <div class="result-header">
+                    <h3>크로스핏 구월</h3>
+                    <span class="status fail">❌</span>
+                </div>
+                <div class="result-details">
+                    <div class="detail-row">
+                        <span class="label">Package:</span>
+                        <span class="value">com.jiseong.crossfitguwol</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Status:</span>
+                        <span class="value fail">
+                            FAIL
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Duration:</span>
+                        <span class="value">2.45s</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Screens:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Elements:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Actions:</span>
+                        <span class="value">0</span>
+                    </div>
+            
+                    <div class="detail-row">
+                        <span class="label">Message:</span>
+                        <span class="value error-message">'int' object is not iterable</span>
+                    </div>
+            </div></div>
+            <div class="test-result">
+                <div class="result-header">
+                    <h3>혼술의 온도</h3>
+                    <span class="status fail">❌</span>
+                </div>
+                <div class="result-details">
+                    <div class="detail-row">
+                        <span class="label">Package:</span>
+                        <span class="value">com.atomostudio.honsoolondo</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Status:</span>
+                        <span class="value fail">
+                            FAIL
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Duration:</span>
+                        <span class="value">2.53s</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Screens:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Elements:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Actions:</span>
+                        <span class="value">0</span>
+                    </div>
+            
+                    <div class="detail-row">
+                        <span class="label">Message:</span>
+                        <span class="value error-message">'int' object is not iterable</span>
+                    </div>
+            </div></div>
+            <div class="test-result">
+                <div class="result-header">
+                    <h3>PagePick</h3>
+                    <span class="status fail">❌</span>
+                </div>
+                <div class="result-details">
+                    <div class="detail-row">
+                        <span class="label">Package:</span>
+                        <span class="value">com.sanghyun01.PagePick</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Status:</span>
+                        <span class="value fail">
+                            FAIL
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Duration:</span>
+                        <span class="value">2.55s</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Screens:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Elements:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Actions:</span>
+                        <span class="value">0</span>
+                    </div>
+            
+                    <div class="detail-row">
+                        <span class="label">Message:</span>
+                        <span class="value error-message">'int' object is not iterable</span>
+                    </div>
+            </div></div>
+            <div class="test-result">
+                <div class="result-header">
+                    <h3>MemoryMap</h3>
+                    <span class="status fail">❌</span>
+                </div>
+                <div class="result-details">
+                    <div class="detail-row">
+                        <span class="label">Package:</span>
+                        <span class="value">com.taesujung.memorymap</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Status:</span>
+                        <span class="value fail">
+                            FAIL
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Duration:</span>
+                        <span class="value">2.69s</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Screens:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Elements:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Actions:</span>
+                        <span class="value">0</span>
+                    </div>
+            
+                    <div class="detail-row">
+                        <span class="label">Message:</span>
+                        <span class="value error-message">'int' object is not iterable</span>
+                    </div>
+            </div></div>
+            <div class="test-result">
+                <div class="result-header">
+                    <h3>Math Poker Challenge</h3>
+                    <span class="status fail">❌</span>
+                </div>
+                <div class="result-details">
+                    <div class="detail-row">
+                        <span class="label">Package:</span>
+                        <span class="value">com.jin_kor.mathpokerchallenge</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Status:</span>
+                        <span class="value fail">
+                            FAIL
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Duration:</span>
+                        <span class="value">2.59s</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Screens:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Elements:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Actions:</span>
+                        <span class="value">0</span>
+                    </div>
+            
+                    <div class="detail-row">
+                        <span class="label">Message:</span>
+                        <span class="value error-message">'int' object is not iterable</span>
+                    </div>
+            </div></div>
+            <div class="test-result">
+                <div class="result-header">
+                    <h3>Rimwatcher</h3>
+                    <span class="status fail">❌</span>
+                </div>
+                <div class="result-details">
+                    <div class="detail-row">
+                        <span class="label">Package:</span>
+                        <span class="value">nuller.rimwatcher</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Status:</span>
+                        <span class="value fail">
+                            FAIL
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Duration:</span>
+                        <span class="value">2.99s</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Screens:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Elements:</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Actions:</span>
+                        <span class="value">0</span>
+                    </div>
+            
+                    <div class="detail-row">
+                        <span class="label">Message:</span>
+                        <span class="value error-message">'int' object is not iterable</span>
+                    </div>
+            </div></div>
+        </div>
+        
+        <footer>
+            <p>Generated by Android App Auto Tester</p>
+        </footer>
+    </div>
+</body>
+</html>

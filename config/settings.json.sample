@@ -1,0 +1,13 @@
+{
+  "screenshot_on_error": true,
+  "screenshot_interval": 30,
+  "collect_logcat": true,
+  "logcat_filter": [
+    "E",
+    "W",
+    "F"
+  ],
+  "report_format": "markdown",
+  "max_test_retries": 3,
+  "delay_between_apps": 5
+}

@@ -1,0 +1,38 @@
+{
+  "apps": [
+    {
+      "name": "Sample App 1",
+      "package": "com.example.app1",
+      "activity": ".MainActivity",
+      "test_duration": 120,
+      "test_actions": [
+        "scroll",
+        "click_buttons",
+        "input_text",
+        "back_navigation"
+      ]
+    },
+    {
+      "name": "Sample App 2",
+      "package": "com.example.app2",
+      "activity": ".MainActivity",
+      "test_duration": 90,
+      "test_actions": [
+        "scroll",
+        "click_buttons"
+      ]
+    },
+    {
+      "name": "Sample App 3",
+      "package": "com.example.app3",
+      "activity": ".SplashActivity",
+      "test_duration": 150,
+      "test_actions": [
+        "scroll",
+        "click_buttons",
+        "input_text",
+        "back_navigation"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+# Android App Auto Tester - Python Dependencies
+# Python 3.8+ required
+
+# Android UI Automation
+uiautomator2>=2.16.0
+
+# Image processing for screenshots
+Pillow>=9.0.0
+
+# Report template engine
+Jinja2>=3.0.0
+
+# Modern GUI framework
+customtkinter>=5.0.0
+
+# Additional utilities
+requests>=2.28.0  # For uiautomator2 HTTP communication
