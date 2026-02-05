@@ -34,7 +34,8 @@ env/
 *~
 
 # Generated reports and logs
-reports/*.md
+reports/*
+!reports/.gitkeep
 logs/*.log
 
 # Screenshots
