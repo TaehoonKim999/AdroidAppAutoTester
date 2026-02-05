@@ -33,15 +33,15 @@ env/
 *.swo
 *~
 
-# Generated reports and logs
+# Generated reports and logs (local only)
 reports/*
 !reports/.gitkeep
-logs/*.log
+logs/*
+!logs/.gitkeep
 
-# Screenshots
-screenshots/*.png
-screenshots/*.jpg
-screenshots/*.jpeg
+# Screenshots (local only)
+screenshots/*
+!screenshots/.gitkeep
 
 # OS specific
 .DS_Store
