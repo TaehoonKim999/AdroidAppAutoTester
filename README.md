@@ -51,7 +51,7 @@
 3. **앱 실행**
    ```cmd
    # GUI 버전 (권장)
-   python -m src.gui
+   python -m src.main --gui
 
    # CLI 버전
    python -m src.main
@@ -74,7 +74,7 @@
 3. **앱 실행**
    ```bash
    # GUI 버전 (권장)
-   python3 -m src.gui
+   python3 -m src.main --gui
 
    # CLI 버전
    python3 -m src.main
@@ -89,10 +89,13 @@
 #### 1. 앱 실행
 ```bash
 # Windows
-python -m src.gui
+python -m src.main --gui
 
 # Ubuntu
-python3 -m src.gui
+python3 -m src.main --gui
+
+# 또는 간단하게
+python -m src.main -g
 ```
 
 #### 2. 디바이스 선택
@@ -456,6 +459,9 @@ pytest --cov=src tests/
 
 ### Q: GUI 대신 CLI를 사용하고 싶습니다.
 **A**: `python -m src.main`으로 CLI를 실행하세요. CLI는 스크립트 자동화에 적합합니다.
+
+### Q: GUI 실행 명령어가 작동하지 않습니다.
+**A**: 올바른 명령어는 `python -m src.main --gui` 또는 `python -m src.main -g`입니다.
 
 ### Q: HTML 리포트에서 스크린샷이 보이지 않습니다.
 **A**: `config/settings.json`에서 `screenshot_on_error: true`로 설정하세요. 정기 스크린샷은 `screenshot_interval` 설정으로 활성화할 수 있습니다.
