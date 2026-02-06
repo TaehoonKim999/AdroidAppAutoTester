@@ -444,45 +444,75 @@ class DeviceManager:
         adb_cmd = self.platform_utils.get_adb_command()
         
         try:
-            # Use dumpsys package to find launcher activity
+            # Method 1: Use pm dump to get package info
             code, output, _ = self.platform_utils.run_command(
-                [adb_cmd, "-s", self.serial, "shell", "dumpsys", "package", package],
-                timeout=15
+                [adb_cmd, "-s", self.serial, "shell", "pm", "dump", package],
+                timeout=20
             )
             
-            if code != 0:
-                return None
-            
-            # Parse output for launchable activity
-            in_activities = False
-            for line in output.split('\n'):
-                # Check if we're in the activities section
-                if 'Activity Resolver Table:' in line and 'android.intent.action.MAIN' in line:
-                    in_activities = True
-                    continue
+            if code == 0 and output:
+                # Parse for android.intent.action.MAIN with category android.intent.category.LAUNCHER
+                lines = output.split('\n')
+                in_intent_filter = False
+                found_launcher = False
                 
-                if in_activities:
-                    # Look for activity lines
-                    if line.strip().startswith(package):
-                        # Extract activity name
-                        parts = line.strip().split()
-                        if len(parts) >= 2:
-                            activity = parts[1]
-                            # Clean up the activity name
-                            if activity.startswith(package):
-                                return f"{package}/{activity[len(package):]}"
-                            return activity
+                for i, line in enumerate(lines):
+                    # Look for intent filters
+                    if 'android.intent.action.MAIN' in line:
+                        in_intent_filter = True
+                        continue
+                    
+                    if in_intent_filter:
+                        # Look for category LAUNCHER
+                        if 'android.intent.category.LAUNCHER' in line:
+                            found_launcher = True
+                            # Look backwards to find the activity name
+                            for j in range(i, max(0, i-50), -1):
+                                if 'Activity{' in lines[j] and package in lines[j]:
+                                    # Extract activity name
+                                    activity_line = lines[j]
+                                    # Format: Activity{... u0 com.example.app/com.example.app.MainActivity}
+                                    parts = activity_line.split()
+                                    for part in parts:
+                                        if part.startswith(package):
+                                            # Found the activity
+                                            activity_part = part.split('}')[-1].strip()
+                                            return f"{package}/{activity_part.replace(package, '')}"
+                            break
             
-            # Alternative method: use dumpsys package for android.intent.action.MAIN
-            code, output, _ = self.platform_utils.run_command(
-                [adb_cmd, "-s", self.serial, "shell", "cmd", "package", "resolve-activity", "--brief", package + "/android.intent.action.MAIN"],
+            # Method 2: Use monkey to launch (simpler approach)
+            # This doesn't require finding the exact activity
+            code, _, _ = self.platform_utils.run_command(
+                [adb_cmd, "-s", self.serial, "shell", "monkey", "-p", package, "-c", "android.intent.category.LAUNCHER", "1"],
                 timeout=10
             )
             
             if code == 0:
-                activity = output.strip()
-                if activity and '/' in activity:
-                    return activity
+                # Monkey succeeded, wait a bit and check if app is running
+                time.sleep(2)
+                if self.is_app_running(package):
+                    print(f"[INFO] App launched via monkey: {package}")
+                    return package  # Return package name only
+            
+            # Method 3: Try to start with common activity names
+            common_activities = [
+                ".MainActivity",
+                ".SplashActivity",
+                ".LauncherActivity",
+                ".StartActivity"
+            ]
+            
+            for activity in common_activities:
+                full_activity = f"{package}/{activity}"
+                code, _, _ = self.platform_utils.run_command(
+                    [adb_cmd, "-s", self.serial, "shell", "am", "start", "-n", full_activity],
+                    timeout=5
+                )
+                if code == 0:
+                    time.sleep(2)
+                    if self.is_app_running(package):
+                        print(f"[INFO] App launched with common activity: {full_activity}")
+                        return full_activity
             
             return None
             

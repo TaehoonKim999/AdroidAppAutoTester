@@ -56,7 +56,62 @@ class TestView(ctk.CTkFrame):
             import traceback
             traceback.print_exc()
             raise
-    
+
+    def _bind_mousewheel(self, widget):
+        """
+        Bind mouse wheel scrolling to a scrollable widget.
+
+        Args:
+            widget: CTkScrollableFrame to bind mouse wheel events
+        """
+        # CTkScrollableFrame has _parent_canvas attribute for internal canvas
+        def on_mousewheel(event):
+            try:
+                # Windows and MacOS
+                if event.delta:
+                    widget._parent_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+            except Exception:
+                pass
+
+        def on_mousewheel_linux_up(event):
+            try:
+                widget._parent_canvas.yview_scroll(-1, "units")
+            except Exception:
+                pass
+
+        def on_mousewheel_linux_down(event):
+            try:
+                widget._parent_canvas.yview_scroll(1, "units")
+            except Exception:
+                pass
+
+        def bind_to_widget(w):
+            """Recursively bind mouse wheel to widget and all its children."""
+            try:
+                w.bind("<MouseWheel>", on_mousewheel, add="+")
+                w.bind("<Button-4>", on_mousewheel_linux_up, add="+")
+                w.bind("<Button-5>", on_mousewheel_linux_down, add="+")
+            except Exception:
+                pass
+
+            # Bind to all children recursively
+            try:
+                for child in w.winfo_children():
+                    bind_to_widget(child)
+            except Exception:
+                pass
+
+        # Bind to the scrollable frame and all its children
+        bind_to_widget(widget)
+
+        # Also bind to the internal canvas
+        try:
+            widget._parent_canvas.bind("<MouseWheel>", on_mousewheel, add="+")
+            widget._parent_canvas.bind("<Button-4>", on_mousewheel_linux_up, add="+")
+            widget._parent_canvas.bind("<Button-5>", on_mousewheel_linux_down, add="+")
+        except Exception:
+            pass
+
     def _build_ui(self):
         """Build test view UI."""
         try:
@@ -108,6 +163,9 @@ class TestView(ctk.CTkFrame):
                 height=200
             )
             self.apps_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+
+            # Enable mouse wheel scrolling
+            self._bind_mousewheel(self.apps_frame)
         except Exception as e:
             print(f"[ERROR] Failed to build apps frame: {e}")
             self.apps_frame = None
@@ -217,14 +275,25 @@ class TestView(ctk.CTkFrame):
         except (FileNotFoundError, ValueError, Exception) as e:
             # Handle case where apps.json doesn't exist or is invalid
             self.apps = []
-            if self.main_window:
-                self.main_window._update_status(f"No apps configured - {e}")
-            self._log(f"Warning: {e}")
-            self._log("Please add apps in the Apps view")
+            try:
+                if self.main_window:
+                    self.main_window._update_status(f"No apps configured - {e}")
+            except Exception:
+                pass  # Ignore errors updating status
+            
+            try:
+                self._log(f"Warning: {e}")
+                self._log("Please add apps in the Apps view")
+            except Exception:
+                pass  # Ignore errors logging
+            
             return  # Return early to avoid errors
         
         if self.apps_frame is None:
-            self._log("Error: Apps frame not initialized")
+            try:
+                self._log("Error: Apps frame not initialized")
+            except Exception:
+                pass
             return  # Return early to avoid errors
         
         # Clear current apps
@@ -266,8 +335,14 @@ class TestView(ctk.CTkFrame):
                     variable=var
                 )
                 checkbox.pack(side="left", padx=10, pady=15)
+
+            # Rebind mousewheel to include new widgets
+            if self.apps_frame:
+                self._bind_mousewheel(self.apps_frame)
         except Exception as e:
             print(f"[ERROR] Failed to create app checkboxes: {e}")
+            import traceback
+            traceback.print_exc()
         
         # Update device status
         try:

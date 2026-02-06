@@ -24,21 +24,76 @@ class ReportView(ctk.CTkFrame):
     def __init__(self, parent, main_window):
         """
         Initialize report view.
-        
+
         Args:
             parent: Parent widget
             main_window: Reference to main window
         """
         super().__init__(parent)
-        
+
         self.main_window = main_window
         self.reports_dir = Path("reports")
-        
+
         # Build UI
         self._build_ui()
-        
+
         # Load reports
         self._load_reports()
+
+    def _bind_mousewheel(self, widget):
+        """
+        Bind mouse wheel scrolling to a scrollable widget.
+
+        Args:
+            widget: CTkScrollableFrame to bind mouse wheel events
+        """
+        # CTkScrollableFrame has _parent_canvas attribute for internal canvas
+        def on_mousewheel(event):
+            try:
+                # Windows and MacOS
+                if event.delta:
+                    widget._parent_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+            except Exception:
+                pass
+
+        def on_mousewheel_linux_up(event):
+            try:
+                widget._parent_canvas.yview_scroll(-1, "units")
+            except Exception:
+                pass
+
+        def on_mousewheel_linux_down(event):
+            try:
+                widget._parent_canvas.yview_scroll(1, "units")
+            except Exception:
+                pass
+
+        def bind_to_widget(w):
+            """Recursively bind mouse wheel to widget and all its children."""
+            try:
+                w.bind("<MouseWheel>", on_mousewheel, add="+")
+                w.bind("<Button-4>", on_mousewheel_linux_up, add="+")
+                w.bind("<Button-5>", on_mousewheel_linux_down, add="+")
+            except Exception:
+                pass
+
+            # Bind to all children recursively
+            try:
+                for child in w.winfo_children():
+                    bind_to_widget(child)
+            except Exception:
+                pass
+
+        # Bind to the scrollable frame and all its children
+        bind_to_widget(widget)
+
+        # Also bind to the internal canvas
+        try:
+            widget._parent_canvas.bind("<MouseWheel>", on_mousewheel, add="+")
+            widget._parent_canvas.bind("<Button-4>", on_mousewheel_linux_up, add="+")
+            widget._parent_canvas.bind("<Button-5>", on_mousewheel_linux_down, add="+")
+        except Exception:
+            pass
     
     def _build_ui(self):
         """Build report view UI."""
@@ -50,14 +105,29 @@ class ReportView(ctk.CTkFrame):
         )
         title_label.pack(pady=(20, 10))
         
+        # Buttons frame
+        buttons_frame = ctk.CTkFrame(self)
+        buttons_frame.pack(fill="x", padx=10, pady=(0, 10))
+        
         # Refresh button
         refresh_btn = ctk.CTkButton(
-            self,
+            buttons_frame,
             text="🔄 Refresh",
             command=self._load_reports,
             width=120
         )
-        refresh_btn.pack(pady=(0, 10))
+        refresh_btn.pack(side="left", padx=5, pady=10)
+        
+        # Delete All button
+        delete_all_btn = ctk.CTkButton(
+            buttons_frame,
+            text="🗑 Delete All Reports",
+            command=self._delete_all_reports,
+            width=160,
+            fg_color="#DC3545",
+            hover_color="#BB2D3B"
+        )
+        delete_all_btn.pack(side="right", padx=5, pady=10)
         
         # Reports list
         self.reports_frame = ctk.CTkScrollableFrame(
@@ -65,6 +135,9 @@ class ReportView(ctk.CTkFrame):
             height=450
         )
         self.reports_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Enable mouse wheel scrolling
+        self._bind_mousewheel(self.reports_frame)
     
     def _load_reports(self):
         """Load and display test reports."""
@@ -162,7 +235,10 @@ class ReportView(ctk.CTkFrame):
                 hover_color="#BB2D3B"
             )
             delete_btn.pack(side="right", padx=5, pady=20)
-        
+
+        # Rebind mousewheel to include new widgets
+        self._bind_mousewheel(self.reports_frame)
+
         self.main_window._update_status(f"Found {len(report_files)} report(s)")
     
     def _get_file_icon(self, suffix: str) -> str:
@@ -262,3 +338,48 @@ class ReportView(ctk.CTkFrame):
                 self.main_window._update_status(f"Deleted: {report_file.name}")
         except Exception as e:
             self.main_window._update_status(f"Error deleting report: {e}")
+    
+    def _delete_all_reports(self):
+        """Delete all report files in the reports directory."""
+        # Check if reports directory exists
+        if not self.reports_dir.exists():
+            self.main_window._update_status("No reports to delete")
+            return
+        
+        # Get all report files
+        report_files = []
+        for ext in ["*.txt", "*.html", "*.json"]:
+            report_files.extend(self.reports_dir.glob(ext))
+        
+        if not report_files:
+            self.main_window._update_status("No reports to delete")
+            return
+        
+        # Show confirmation dialog
+        from tkinter import messagebox
+        confirm = messagebox.askyesno(
+            "Delete All Reports",
+            f"Are you sure you want to delete {len(report_files)} report file(s)?\n\nThis action cannot be undone."
+        )
+        
+        if not confirm:
+            return
+        
+        # Delete all files
+        deleted_count = 0
+        failed_count = 0
+        for report_file in report_files:
+            try:
+                report_file.unlink()
+                deleted_count += 1
+            except Exception as e:
+                print(f"[ERROR] Failed to delete {report_file.name}: {e}")
+                failed_count += 1
+        
+        # Reload and update status
+        self._load_reports()
+        
+        if failed_count == 0:
+            self.main_window._update_status(f"Deleted {deleted_count} report(s)")
+        else:
+            self.main_window._update_status(f"Deleted {deleted_count} report(s), {failed_count} failed")

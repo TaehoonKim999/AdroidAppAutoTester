@@ -42,7 +42,62 @@ class DevicesView(ctk.CTkFrame):
         
         # Load devices
         self._load_devices()
-    
+
+    def _bind_mousewheel(self, widget):
+        """
+        Bind mouse wheel scrolling to a scrollable widget.
+
+        Args:
+            widget: CTkScrollableFrame to bind mouse wheel events
+        """
+        # CTkScrollableFrame has _parent_canvas attribute for internal canvas
+        def on_mousewheel(event):
+            try:
+                # Windows and MacOS
+                if event.delta:
+                    widget._parent_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+            except Exception:
+                pass
+
+        def on_mousewheel_linux_up(event):
+            try:
+                widget._parent_canvas.yview_scroll(-1, "units")
+            except Exception:
+                pass
+
+        def on_mousewheel_linux_down(event):
+            try:
+                widget._parent_canvas.yview_scroll(1, "units")
+            except Exception:
+                pass
+
+        def bind_to_widget(w):
+            """Recursively bind mouse wheel to widget and all its children."""
+            try:
+                w.bind("<MouseWheel>", on_mousewheel, add="+")
+                w.bind("<Button-4>", on_mousewheel_linux_up, add="+")
+                w.bind("<Button-5>", on_mousewheel_linux_down, add="+")
+            except Exception:
+                pass
+
+            # Bind to all children recursively
+            try:
+                for child in w.winfo_children():
+                    bind_to_widget(child)
+            except Exception:
+                pass
+
+        # Bind to the scrollable frame and all its children
+        bind_to_widget(widget)
+
+        # Also bind to the internal canvas
+        try:
+            widget._parent_canvas.bind("<MouseWheel>", on_mousewheel, add="+")
+            widget._parent_canvas.bind("<Button-4>", on_mousewheel_linux_up, add="+")
+            widget._parent_canvas.bind("<Button-5>", on_mousewheel_linux_down, add="+")
+        except Exception:
+            pass
+
     def _build_ui(self):
         """Build devices view UI."""
         # Title
@@ -68,6 +123,9 @@ class DevicesView(ctk.CTkFrame):
             height=400
         )
         self.devices_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Enable mouse wheel scrolling
+        self._bind_mousewheel(self.devices_frame)
         
         # Device info frame
         self.info_frame = ctk.CTkFrame(self, height=200)
@@ -144,7 +202,10 @@ class DevicesView(ctk.CTkFrame):
                 width=80
             )
             select_btn.pack(side="right", padx=10, pady=20)
-        
+
+        # Rebind mousewheel to include new widgets
+        self._bind_mousewheel(self.devices_frame)
+
         self.main_window._update_status(f"Found {len(devices)} device(s)")
     
     def _select_device(self, device: DeviceInfo):
