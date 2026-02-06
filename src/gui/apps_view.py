@@ -243,8 +243,8 @@ class AppsView(ctk.CTkFrame):
             return
         
         try:
-            # Use aapt=False initially for faster loading
-            self.installed_apps = self.device_manager.get_installed_apps(third_party_only=True, use_aapt=False)
+            # Use aapt=True to get actual app names from device
+            self.installed_apps = self.device_manager.get_installed_apps(third_party_only=True, use_aapt=True)
             
             if not self.installed_apps:
                 self.device_status_label.configure(
