@@ -18,6 +18,15 @@ except ImportError:
     u2 = None
 
 from .platform_utils import get_platform_utils
+from .exceptions import (
+    DeviceError, DeviceNotFoundError, DeviceConnectionError,
+    DeviceTimeoutError, DeviceDisconnectedError, ADBError,
+    AppLaunchError
+)
+from .utils.logger import get_logger
+
+# Module-level logger
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -154,13 +163,13 @@ class DeviceManager:
         """
         # Check ADB availability
         if not self.platform_utils.check_adb_available():
-            print("[ERROR] ADB is not available. Please install Android SDK Platform Tools.")
+            logger.error("ADB is not available. Please install Android SDK Platform Tools.")
             return False
         
         # Get connected devices
         devices = self.platform_utils.get_connected_devices()
         if not devices:
-            print("[ERROR] No Android devices found. Please connect a device with USB debugging enabled.")
+            logger.error("No Android devices found. Please connect a device with USB debugging enabled.")
             return False
         
         # Determine which device to connect to
@@ -168,30 +177,29 @@ class DeviceManager:
             # Use first device
             self.serial = devices[0]
         elif self.serial not in devices:
-            print(f"[ERROR] Device with serial {self.serial} not found.")
-            print(f"Available devices: {devices}")
+            logger.error(f"Device with serial {self.serial} not found. Available devices: {devices}")
             return False
         
         # Try to connect with retries
         for attempt in range(1, self.MAX_CONNECT_RETRIES + 1):
-            print(f"[INFO] Connecting to device {self.serial} (attempt {attempt}/{self.MAX_CONNECT_RETRIES})...")
-            
+            logger.info(f"Connecting to device {self.serial} (attempt {attempt}/{self.MAX_CONNECT_RETRIES})")
+
             try:
                 self.device = u2.connect(self.serial)
                 self._connected = True
-                
+
                 # Get device info
                 self.device_info = self._get_device_info()
-                print(f"[OK] Connected to {self.device_info}")
-                
+                logger.info(f"Connected to device: {self.device_info}")
+
                 return True
-                
-            except Exception as e:
-                print(f"[WARNING] Connection attempt {attempt} failed: {e}")
+
+            except (DeviceConnectionError, Exception) as e:
+                logger.warning(f"Connection attempt {attempt} failed: {e}")
                 if attempt < self.MAX_CONNECT_RETRIES:
                     time.sleep(self.RETRY_DELAY)
                 else:
-                    print(f"[ERROR] Failed to connect after {self.MAX_CONNECT_RETRIES} attempts.")
+                    logger.error(f"Failed to connect after {self.MAX_CONNECT_RETRIES} attempts.")
                     return False
         
         return False
@@ -203,11 +211,11 @@ class DeviceManager:
         Clears device connection and resets state.
         """
         if self.device is not None:
-            print(f"[INFO] Disconnecting from device {self.serial}...")
+            logger.info(f"Disconnecting from device {self.serial}")
             self.device = None
             self._connected = False
             self.device_info = None
-            print("[OK] Disconnected")
+            logger.info("Disconnected")
     
     def is_connected(self) -> bool:
         """
@@ -385,9 +393,9 @@ class DeviceManager:
                                 self._app_name_cache[package] = label
                                 return label
         
-        except Exception as e:
-            print(f"[WARNING] Failed to get app name for {package}: {e}")
-        
+        except ADBError as e:
+            logger.warning(f"Failed to get app name for {package}: {e}")
+
         # Fallback to package name extraction
         return self._extract_app_name(package)
     
@@ -491,7 +499,7 @@ class DeviceManager:
                 # Monkey succeeded, wait a bit and check if app is running
                 time.sleep(2)
                 if self.is_app_running(package):
-                    print(f"[INFO] App launched via monkey: {package}")
+                    logger.info(f"App launched via monkey: {package}")
                     return package  # Return package name only
             
             # Method 3: Try to start with common activity names
@@ -511,13 +519,13 @@ class DeviceManager:
                 if code == 0:
                     time.sleep(2)
                     if self.is_app_running(package):
-                        print(f"[INFO] App launched with common activity: {full_activity}")
+                        logger.info(f"App launched with common activity: {full_activity}")
                         return full_activity
-            
+
             return None
-            
-        except Exception as e:
-            print(f"[WARNING] Failed to find launcher activity for {package}: {e}")
+
+        except ADBError as e:
+            logger.warning(f"Failed to find launcher activity for {package}: {e}")
             return None
     
     def start_app(self, package: str, activity: str) -> bool:
@@ -532,43 +540,43 @@ class DeviceManager:
             bool: True if successful, False otherwise
         """
         if not self.is_connected():
-            print("[ERROR] Device not connected")
+            logger.error("Device not connected")
             return False
-        
+
         adb_cmd = self.platform_utils.get_adb_command()
-        
+
         # If activity is empty or None, find launcher activity automatically
         if not activity or activity.strip() == "" or activity == ".MainActivity":
-            print(f"[INFO] Finding launcher activity for {package}...")
+            logger.info(f"Finding launcher activity for {package}")
             launcher_activity = self._find_launcher_activity(package)
             if launcher_activity:
                 full_activity = launcher_activity
-                print(f"[INFO] Using launcher activity: {full_activity}")
+                logger.info(f"Using launcher activity: {full_activity}")
             else:
                 # Fallback to package name only (Android will try to launch main activity)
                 full_activity = package
-                print(f"[INFO] Using package name only: {full_activity}")
+                logger.info(f"Using package name only: {full_activity}")
         else:
             full_activity = f"{package}/{activity}"
-        
+
         try:
-            print(f"[INFO] Starting app: {full_activity}")
+            logger.info(f"Starting app: {full_activity}")
             code, _, err = self.platform_utils.run_command([
                 adb_cmd, "-s", self.serial,
                 "shell", "am", "start", "-n", full_activity
             ], timeout=10)
-            
+
             if code == 0:
                 # Wait for app to start
                 time.sleep(2)
-                print(f"[OK] App started: {full_activity}")
+                logger.info(f"App started: {full_activity}")
                 return True
             else:
-                print(f"[ERROR] Failed to start app: {err}")
+                logger.error(f"Failed to start app: {err}")
                 return False
-                
-        except Exception as e:
-            print(f"[ERROR] Exception starting app: {e}")
+
+        except (AppLaunchError, ADBError) as e:
+            logger.error(f"Exception starting app: {e}")
             return False
     
     def stop_app(self, package: str) -> bool:
@@ -582,27 +590,27 @@ class DeviceManager:
             bool: True if successful, False otherwise
         """
         if not self.is_connected():
-            print("[ERROR] Device not connected")
+            logger.error("Device not connected")
             return False
-        
+
         adb_cmd = self.platform_utils.get_adb_command()
-        
+
         try:
-            print(f"[INFO] Stopping app: {package}")
+            logger.info(f"Stopping app: {package}")
             code, _, err = self.platform_utils.run_command([
                 adb_cmd, "-s", self.serial,
                 "shell", "am", "force-stop", package
             ], timeout=10)
-            
+
             if code == 0:
-                print(f"[OK] App stopped: {package}")
+                logger.info(f"App stopped: {package}")
                 return True
             else:
-                print(f"[ERROR] Failed to stop app: {err}")
+                logger.error(f"Failed to stop app: {err}")
                 return False
-                
-        except Exception as e:
-            print(f"[ERROR] Exception stopping app: {e}")
+
+        except ADBError as e:
+            logger.error(f"Exception stopping app: {e}")
             return False
     
     def is_app_running(self, package: str) -> bool:
@@ -630,10 +638,10 @@ class DeviceManager:
             if code == 0:
                 # Check if package is in output
                 return package in output
-                
-        except Exception as e:
-            print(f"[WARNING] Error checking app status: {e}")
-        
+
+        except ADBError as e:
+            logger.warning(f"Error checking app status: {e}")
+
         return False
     
     def get_current_activity(self) -> Optional[str]:
@@ -673,10 +681,10 @@ class DeviceManager:
                                         activity = activity[:-1]
                                     return activity
                 return None
-                
-        except Exception as e:
-            print(f"[WARNING] Error getting current activity: {e}")
-        
+
+        except ADBError as e:
+            logger.warning(f"Error getting current activity: {e}")
+
         return None
     
     def take_screenshot(self, filename: str) -> Optional[Path]:
@@ -690,23 +698,23 @@ class DeviceManager:
             Path to saved screenshot, or None if failed
         """
         if not self.is_connected():
-            print("[ERROR] Device not connected")
+            logger.error("Device not connected")
             return None
-        
+
         try:
             # Get screenshots directory
             screenshots_dir = self.platform_utils.get_path("screenshots")
             screenshots_dir.mkdir(parents=True, exist_ok=True)
-            
+
             # Full file path
             screenshot_path = screenshots_dir / filename
-            
-            print(f"[INFO] Taking screenshot: {filename}")
-            
+
+            logger.info(f"Taking screenshot: {filename}")
+
             # Use uiautomator2 to take screenshot
             if self.device:
                 self.device.screenshot(str(screenshot_path))
-                print(f"[OK] Screenshot saved: {screenshot_path}")
+                logger.info(f"Screenshot saved: {screenshot_path}")
                 return screenshot_path
             else:
                 # Fallback to ADB
@@ -729,13 +737,13 @@ class DeviceManager:
                             adb_cmd, "-s", self.serial,
                             "shell", "rm", "/sdcard/screenshot_temp.png"
                         ])
-                        print(f"[OK] Screenshot saved: {screenshot_path}")
+                        logger.info(f"Screenshot saved: {screenshot_path}")
                         return screenshot_path
-            
+
             return None
-            
-        except Exception as e:
-            print(f"[ERROR] Failed to take screenshot: {e}")
+
+        except (ADBError, DeviceError) as e:
+            logger.error(f"Failed to take screenshot: {e}")
             return None
 
 

@@ -11,9 +11,10 @@ import threading
 from ..device_manager import DeviceManager, get_device_manager
 from ..config_manager import ConfigManager, AppConfig, get_global_settings
 from ..report_generator import get_report_generator
+from .base_view import BaseView
 
 
-class TestView(ctk.CTkFrame):
+class TestView(BaseView):
     """
     View for running and monitoring tests.
     
@@ -30,7 +31,7 @@ class TestView(ctk.CTkFrame):
     def __init__(self, parent, device_manager: Optional[DeviceManager], config_manager: ConfigManager, main_window):
         """
         Initialize test view.
-        
+
         Args:
             parent: Parent widget
             device_manager: DeviceManager instance
@@ -38,91 +39,26 @@ class TestView(ctk.CTkFrame):
             main_window: Reference to main window
         """
         try:
-            super().__init__(parent)
-            
             self.device_manager = device_manager
             self.config_manager = config_manager
-            self.main_window = main_window
-            self.apps: List[AppConfig] = []
-            self.running = False
-            
-            # Build UI
-            self._build_ui()
-            
-            # Load apps
-            self._load_apps()
+            # Call parent __init__ which triggers lifecycle hooks
+            super().__init__(parent, main_window)
         except Exception as e:
-            print(f"[ERROR] Failed to initialize test view: {e}")
+            logger.error(f"Failed to initialize test view: {e}")
             import traceback
-            traceback.print_exc()
             raise
 
-    def _bind_mousewheel(self, widget):
-        """
-        Bind mouse wheel scrolling to a scrollable widget.
-
-        Args:
-            widget: CTkScrollableFrame to bind mouse wheel events
-        """
-        # CTkScrollableFrame has _parent_canvas attribute for internal canvas
-        def on_mousewheel(event):
-            try:
-                # Windows and MacOS
-                if event.delta:
-                    widget._parent_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-            except Exception:
-                pass
-
-        def on_mousewheel_linux_up(event):
-            try:
-                widget._parent_canvas.yview_scroll(-1, "units")
-            except Exception:
-                pass
-
-        def on_mousewheel_linux_down(event):
-            try:
-                widget._parent_canvas.yview_scroll(1, "units")
-            except Exception:
-                pass
-
-        def bind_to_widget(w):
-            """Recursively bind mouse wheel to widget and all its children."""
-            try:
-                w.bind("<MouseWheel>", on_mousewheel, add="+")
-                w.bind("<Button-4>", on_mousewheel_linux_up, add="+")
-                w.bind("<Button-5>", on_mousewheel_linux_down, add="+")
-            except Exception:
-                pass
-
-            # Bind to all children recursively
-            try:
-                for child in w.winfo_children():
-                    bind_to_widget(child)
-            except Exception:
-                pass
-
-        # Bind to the scrollable frame and all its children
-        bind_to_widget(widget)
-
-        # Also bind to the internal canvas
-        try:
-            widget._parent_canvas.bind("<MouseWheel>", on_mousewheel, add="+")
-            widget._parent_canvas.bind("<Button-4>", on_mousewheel_linux_up, add="+")
-            widget._parent_canvas.bind("<Button-5>", on_mousewheel_linux_down, add="+")
-        except Exception:
-            pass
+    def _setup_state(self):
+        """Initialize test view state."""
+        self.apps: List[AppConfig] = []
+        self.running = False
 
     def _build_ui(self):
         """Build test view UI."""
         try:
             # Title
-            title_label = ctk.CTkLabel(
-                self,
-                text="Run Tests",
-                font=ctk.CTkFont(size=20, weight="bold")
-            )
-            title_label.pack(pady=(20, 10))
-            
+            self._build_title("Run Tests")
+
             # Device status
             self.device_status_label = ctk.CTkLabel(
                 self,
@@ -131,7 +67,7 @@ class TestView(ctk.CTkFrame):
             )
             self.device_status_label.pack(pady=(0, 10))
         except Exception as e:
-            print(f"[ERROR] Failed to build title: {e}")
+            logger.error(f"Failed to build title: {e}")
         
         try:
             # Apps selection frame
@@ -154,20 +90,13 @@ class TestView(ctk.CTkFrame):
             )
             select_all_cb.pack(side="left", padx=10, pady=10)
         except Exception as e:
-            print(f"[ERROR] Failed to build apps selection frame: {e}")
+            logger.error(f"Failed to build apps selection frame: {e}")
         
         try:
             # Apps list
-            self.apps_frame = ctk.CTkScrollableFrame(
-                self,
-                height=200
-            )
-            self.apps_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
-
-            # Enable mouse wheel scrolling
-            self._bind_mousewheel(self.apps_frame)
+            self.apps_frame = self._build_scrollable_frame(height=200)
         except Exception as e:
-            print(f"[ERROR] Failed to build apps frame: {e}")
+            logger.error(f"Failed to build apps frame: {e}")
             self.apps_frame = None
         
         try:
@@ -207,7 +136,7 @@ class TestView(ctk.CTkFrame):
             self.log_text.pack(fill="both", expand=True, padx=10, pady=(0, 10))
             self._log("Ready to run tests")
         except Exception as e:
-            print(f"[ERROR] Failed to build progress frame: {e}")
+            logger.error(f"Failed to build progress frame: {e}")
         
         try:
             # Buttons frame
@@ -246,7 +175,7 @@ class TestView(ctk.CTkFrame):
             )
             clear_btn.pack(side="left", padx=5, pady=10)
         except Exception as e:
-            print(f"[ERROR] Failed to build buttons frame: {e}")
+            logger.error(f"Failed to build buttons frame: {e}")
     
     def _log(self, message: str):
         """
@@ -259,16 +188,16 @@ class TestView(ctk.CTkFrame):
             self.log_text.insert("end", f"{message}\n")
             self.log_text.see("end")
         except Exception as e:
-            print(f"[ERROR] Failed to log message: {e}")
+            logger.error(f"Failed to log message: {e}")
     
     def _clear_log(self):
         """Clear the log text."""
         try:
             self.log_text.delete("1.0", "end")
         except Exception as e:
-            print(f"[ERROR] Failed to clear log: {e}")
+            logger.error(f"Failed to clear log: {e}")
     
-    def _load_apps(self):
+    def _load_data(self):
         """Load and display configured apps."""
         try:
             self.apps = self.config_manager.load_apps()
@@ -277,7 +206,7 @@ class TestView(ctk.CTkFrame):
             self.apps = []
             try:
                 if self.main_window:
-                    self.main_window._update_status(f"No apps configured - {e}")
+                    self.update_status(f"No apps configured - {e}")
             except Exception:
                 pass  # Ignore errors updating status
             
@@ -301,7 +230,7 @@ class TestView(ctk.CTkFrame):
             for widget in self.apps_frame.winfo_children():
                 widget.destroy()
         except Exception as e:
-            print(f"[ERROR] Failed to clear apps frame: {e}")
+            logger.error(f"Failed to clear apps frame: {e}")
         
         # Display apps
         if not self.apps:
@@ -313,7 +242,7 @@ class TestView(ctk.CTkFrame):
                 )
                 no_apps_label.pack(pady=20)
             except Exception as e:
-                print(f"[ERROR] Failed to create no apps label: {e}")
+                logger.error(f"Failed to create no apps label: {e}")
             return
         
         try:
@@ -338,11 +267,10 @@ class TestView(ctk.CTkFrame):
 
             # Rebind mousewheel to include new widgets
             if self.apps_frame:
-                self._bind_mousewheel(self.apps_frame)
+                self.rebind_mousewheel(self.apps_frame)
         except Exception as e:
-            print(f"[ERROR] Failed to create app checkboxes: {e}")
+            logger.error(f"Failed to create app checkboxes: {e}")
             import traceback
-            traceback.print_exc()
         
         # Update device status
         try:
@@ -357,7 +285,7 @@ class TestView(ctk.CTkFrame):
             else:
                 self.device_status_label.configure(text="Device: Not connected")
         except Exception as e:
-            print(f"[ERROR] Failed to update device status: {e}")
+            logger.error(f"Failed to update device status: {e}")
     
     def _toggle_select_all(self):
         """Toggle selection of all apps."""
@@ -367,7 +295,7 @@ class TestView(ctk.CTkFrame):
                 for var in self.app_vars.values():
                     var.set(select_all)
         except Exception as e:
-            print(f"[ERROR] Failed to toggle select all: {e}")
+            logger.error(f"Failed to toggle select all: {e}")
     
     def _run_tests(self):
         """Run selected tests."""
@@ -378,16 +306,16 @@ class TestView(ctk.CTkFrame):
                 if self.app_vars[app.package].get()
             ]
         except (KeyError, AttributeError) as e:
-            print(f"[ERROR] Failed to get selected apps: {e}")
-            self.main_window._update_status("Error getting selected apps")
+            logger.error(f"Failed to get selected apps: {e}")
+            self.update_status("Error getting selected apps")
             return
         
         if not selected_apps:
-            self.main_window._update_status("No apps selected")
+            self.update_status("No apps selected")
             return
         
         if not self.device_manager:
-            self.main_window._update_status("No device connected")
+            self.update_status("No device connected")
             return
         
         # Update UI
@@ -412,6 +340,8 @@ class TestView(ctk.CTkFrame):
         """
         # Lazy import to avoid initialization issues
         from ..test_engine import get_test_engine
+
+
         
         results = []
         try:
@@ -442,7 +372,7 @@ class TestView(ctk.CTkFrame):
                 self.progress_bar.set(1.0)
                 self.progress_label.configure(text="Tests completed!")
                 self._log("All tests completed successfully")
-                self.main_window._update_status("Tests completed successfully")
+                self.update_status("Tests completed successfully")
                 
                 # Generate report
                 self._generate_report(results, apps)
@@ -450,7 +380,7 @@ class TestView(ctk.CTkFrame):
         except Exception as e:
             self.progress_label.configure(text=f"Error: {e}")
             self._log(f"Error: {e}")
-            self.main_window._update_status(f"Test error: {e}")
+            self.update_status(f"Test error: {e}")
         
         finally:
             self.running = False
@@ -490,15 +420,15 @@ class TestView(ctk.CTkFrame):
                 self._log(f"  - {report_file}")
             
             self._log("="*50)
-            self.main_window._update_status(f"Report generated: {len(report_files)} file(s)")
+            self.update_status(f"Report generated: {len(report_files)} file(s)")
             
         except Exception as e:
             self._log(f"Error generating report: {e}")
-            self.main_window._update_status(f"Report generation error: {e}")
+            self.update_status(f"Report generation error: {e}")
     
     def _stop_tests(self):
         """Stop running tests."""
         self.running = False
         self.progress_label.configure(text="Stopping...")
         self._log("Stopping tests...")
-        self.main_window._update_status("Stopping tests...")
+        self.update_status("Stopping tests...")

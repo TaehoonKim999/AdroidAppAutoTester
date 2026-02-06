@@ -17,6 +17,11 @@ try:
 except ImportError:
     u2 = None
 
+from .utils.logger import get_logger
+from .exceptions import UIExplorationError, UIInteractionError, UIElementNotFoundError
+
+logger = get_logger(__name__)
+
 
 @dataclass
 class UIElement:
@@ -160,8 +165,8 @@ class UIExplorer:
         if actions is None:
             actions = ["scroll", "click_buttons"]
         
-        print(f"[INFO] Starting UI exploration for {duration} seconds")
-        print(f"[INFO] Actions: {', '.join(actions)}")
+        logger.info(f"Starting UI exploration for {duration} seconds")
+        logger.info(f"Actions: {', '.join(actions)}")
         
         self.start_time = time.time()
         self.result = ExplorationResult()
@@ -181,32 +186,32 @@ class UIExplorer:
                     
                     # Check if time expired
                     if elapsed >= duration:
-                        print(f"[INFO] Time expired: {elapsed:.1f}s >= {duration}s")
+                        logger.info(f"Time expired: {elapsed:.1f}s >= {duration}s")
                         break
-                    
+
                     if remaining_time <= 0:
-                        print(f"[INFO] No remaining time")
+                        logger.info("No remaining time")
                         break
                     
                     # Check for stop request
                     if self._stop_requested:
-                        print("[INFO] Exploration stopped by request")
+                        logger.info("Exploration stopped by request")
                         break
                     
                     loop_count += 1
                     
                     # Log progress every 10 seconds
                     if int(elapsed) - last_progress_time >= 10:
-                        print(f"[INFO] Exploration progress: {int(elapsed)}/{duration}s (loop {loop_count})")
+                        logger.info(f"Exploration progress: {int(elapsed)}/{duration}s (loop {loop_count})")
                         last_progress_time = int(elapsed)
                     
                     # Check for error dialogs
                     try:
                         if self.detect_error_dialog():
-                            print("[WARNING] Error dialog detected")
+                            logger.warning("Error dialog detected")
                             self._handle_error_dialog()
                     except Exception as e:
-                        print(f"[WARNING] Error checking for error dialog: {e}")
+                        logger.warning(f"Error checking for error dialog: {e}")
                     
                     # Get current screen signature
                     try:
@@ -214,9 +219,9 @@ class UIExplorer:
                         if screen_sig not in self.visited_screens:
                             self.visited_screens.add(screen_sig)
                             self.result.screens_visited += 1
-                            print(f"[INFO] New screen visited (total: {self.result.screens_visited})")
+                            logger.info(f"New screen visited (total: {self.result.screens_visited})")
                     except Exception as e:
-                        print(f"[WARNING] Error getting screen signature: {e}")
+                        logger.warning(f"Error getting screen signature: {e}")
                     
                     # Perform random action
                     try:
@@ -226,39 +231,37 @@ class UIExplorer:
                         else:
                             # No action possible - try pressing back
                             if self.result.screens_visited > 0:
-                                print("[INFO] No action possible, pressing back")
+                                logger.info("No action possible, pressing back")
                                 try:
                                     self.press_back()
                                 except Exception as e:
-                                    print(f"[WARNING] Failed to press back: {e}")
+                                    logger.warning(f"Failed to press back: {e}")
                     except Exception as e:
-                        print(f"[WARNING] Error performing action: {e}")
+                        logger.warning(f"Error performing action: {e}")
                         self.result.errors_found.append(f"Action error: {e}")
                     
                     # Wait between actions
                     time.sleep(self.ACTION_WAIT_TIME)
                 
                 except Exception as loop_error:
-                    print(f"[WARNING] Error in exploration loop: {loop_error}")
+                    logger.warning(f"Error in exploration loop: {loop_error}")
                     self.result.errors_found.append(f"Loop error: {loop_error}")
                     # Continue loop despite error
                     time.sleep(0.5)
-        
-        except Exception as e:
-            print(f"[ERROR] Exploration failed: {e}")
-            import traceback
-            traceback.print_exc()
+
+        except UIExplorationError as e:
+            logger.error(f"Exploration failed: {e}", exc_info=True)
             self.result.errors_found.append(f"Exploration error: {e}")
         
         # Calculate duration
         self.result.duration = time.time() - self.start_time
-        
-        print(f"[INFO] Exploration completed")
-        print(f"[INFO] Screens visited: {self.result.screens_visited}")
-        print(f"[INFO] Elements interacted: {self.result.elements_interacted}")
-        print(f"[INFO] Actions performed: {len(self.result.actions_performed)}")
-        print(f"[INFO] Total duration: {self.result.duration:.1f}s")
-        print(f"[INFO] Loop iterations: {loop_count}")
+
+        logger.info("Exploration completed")
+        logger.info(f"Screens visited: {self.result.screens_visited}")
+        logger.info(f"Elements interacted: {self.result.elements_interacted}")
+        logger.info(f"Actions performed: {len(self.result.actions_performed)}")
+        logger.info(f"Total duration: {self.result.duration:.1f}s")
+        logger.info(f"Loop iterations: {loop_count}")
         
         return self.result
     
@@ -276,8 +279,8 @@ class UIExplorer:
         try:
             xml = self.device.dump_hierarchy()
             return self._parse_xml_elements(xml)
-        except Exception as e:
-            print(f"[WARNING] Error getting elements: {e}")
+        except (UIElementNotFoundError, UIInteractionError) as e:
+            logger.warning(f"Error getting elements: {e}")
             return []
     
     def get_clickable_elements(self) -> List[UIElement]:
@@ -331,8 +334,8 @@ class UIExplorer:
             bounds = element.bounds
             x = (bounds[0] + bounds[2]) // 2
             y = (bounds[1] + bounds[3]) // 2
-            
-            print(f"[INFO] Clicking element: {element.text or element.resource_id}")
+
+            logger.info(f"Clicking element: {element.text or element.resource_id}")
             self.device.click(x, y)
             
             self.result.elements_interacted += 1
@@ -342,9 +345,9 @@ class UIExplorer:
             
             time.sleep(self.SCREEN_WAIT_TIME)
             return True
-            
-        except Exception as e:
-            print(f"[WARNING] Failed to click element: {e}")
+
+        except UIInteractionError as e:
+            logger.warning(f"Failed to click element: {e}")
             self.result.errors_found.append(f"Click failed: {e}")
             return False
     
@@ -383,17 +386,17 @@ class UIExplorer:
                 end_x = int(width * 0.2)
                 self.device.swipe(start_x, center_y, end_x, center_y, 0.5)
             else:
-                print(f"[WARNING] Unknown scroll direction: {direction}")
+                logger.warning(f"Unknown scroll direction: {direction}")
                 return False
-            
-            print(f"[INFO] Scrolled {direction}")
+
+            logger.info(f"Scrolled {direction}")
             self.result.actions_performed.append(f"Scroll: {direction}")
             
             time.sleep(self.SCREEN_WAIT_TIME)
             return True
-            
-        except Exception as e:
-            print(f"[WARNING] Failed to scroll: {e}")
+
+        except UIInteractionError as e:
+            logger.warning(f"Failed to scroll: {e}")
             self.result.errors_found.append(f"Scroll failed: {e}")
             return False
     
@@ -415,9 +418,9 @@ class UIExplorer:
             
             # Clear existing text
             self.device.send_keys("", clear=True)
-            
+
             # Input new text
-            print(f"[INFO] Inputting text: {text}")
+            logger.info(f"Inputting text: {text}")
             self.device.send_keys(text)
             
             self.result.elements_interacted += 1
@@ -427,9 +430,9 @@ class UIExplorer:
             
             time.sleep(self.SCREEN_WAIT_TIME)
             return True
-            
-        except Exception as e:
-            print(f"[WARNING] Failed to input text: {e}")
+
+        except UIInteractionError as e:
+            logger.warning(f"Failed to input text: {e}")
             self.result.errors_found.append(f"Input failed: {e}")
             return False
     
@@ -441,16 +444,16 @@ class UIExplorer:
             bool: True if successful, False otherwise
         """
         try:
-            print("[INFO] Pressing back")
+            logger.info("Pressing back")
             self.device.press("back")
             
             self.result.actions_performed.append("Press: Back")
             
             time.sleep(self.SCREEN_WAIT_TIME)
             return True
-            
-        except Exception as e:
-            print(f"[WARNING] Failed to press back: {e}")
+
+        except UIInteractionError as e:
+            logger.warning(f"Failed to press back: {e}")
             self.result.errors_found.append(f"Back press failed: {e}")
             return False
     
@@ -462,16 +465,16 @@ class UIExplorer:
             bool: True if successful, False otherwise
         """
         try:
-            print("[INFO] Pressing home")
+            logger.info("Pressing home")
             self.device.press("home")
             
             self.result.actions_performed.append("Press: Home")
             
             time.sleep(self.SCREEN_WAIT_TIME)
             return True
-            
-        except Exception as e:
-            print(f"[WARNING] Failed to press home: {e}")
+
+        except UIInteractionError as e:
+            logger.warning(f"Failed to press home: {e}")
             self.result.errors_found.append(f"Home press failed: {e}")
             return False
     
@@ -494,9 +497,9 @@ class UIExplorer:
                         return True
             
             return False
-            
+
         except Exception as e:
-            print(f"[WARNING] Error detecting error dialog: {e}")
+            logger.warning(f"Error detecting error dialog: {e}")
             return False
     
     def _handle_error_dialog(self) -> None:
@@ -516,9 +519,9 @@ class UIExplorer:
             # If no button found, press back
             self.press_back()
             self.result.errors_found.append("Error dialog handled with back")
-            
+
         except Exception as e:
-            print(f"[WARNING] Error handling error dialog: {e}")
+            logger.warning(f"Error handling error dialog: {e}")
     
     def get_screen_signature(self) -> str:
         """
@@ -542,9 +545,9 @@ class UIExplorer:
             
             signature = "|".join(sig_parts)
             return hashlib.md5(signature.encode()).hexdigest()
-            
+
         except Exception as e:
-            print(f"[WARNING] Error getting screen signature: {e}")
+            logger.warning(f"Error getting screen signature: {e}")
             return "unknown"
     
     def _choose_random_action(self, available_actions: List[str]) -> Optional[str]:

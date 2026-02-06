@@ -236,34 +236,88 @@ python -m src.main config --reset
 
 ---
 
+## 🏗️ 아키텍처
+
+### 핵심 시스템
+
+#### 1. 로깅 시스템 (Logger)
+모든 모듈에 통합된 전문적인 로깅 시스템:
+- **타임스탬프**: 모든 로그에 정확한 시간 기록
+- **로그 레벨**: DEBUG, INFO, WARNING, ERROR 구분
+- **세션 로그**: 테스트 세션별 독립적인 로그 파일
+- **위치**: `logs/` 디렉토리에 자동 저장
+
+```python
+# 로그 출력 형식
+2026-02-06 15:34:34 | INFO     | src.device_manager | Connected to device: Samsung Galaxy S23
+2026-02-06 15:34:35 | WARNING  | src.ui_explorer | Failed to click element: Button not found
+2026-02-06 15:34:36 | ERROR    | src.test_engine | Test execution failed: Connection timeout
+```
+
+#### 2. 예외 계층 구조 (Exception Hierarchy)
+체계적인 에러 핸들링을 위한 26개의 커스텀 예외 클래스:
+
+```
+AutoTesterError (base)
+├── DeviceError         # 디바이스 관련 에러
+├── ConfigError         # 설정 관련 에러
+├── TestError           # 테스트 실행 에러
+├── UIError             # UI 인터랙션 에러
+├── LogError            # 로그 수집 에러
+├── ReportError         # 리포트 생성 에러
+├── PlatformError       # 플랫폼 에러
+└── GUIError            # GUI 에러
+```
+
+**장점:**
+- 특정 에러 타입에 대한 정확한 처리
+- 에러 원인과 위치를 쉽게 파악
+- 디버깅 시간 단축
+- 사용자에게 명확한 에러 메시지 제공
+
+#### 3. 모듈 구조
+각 모듈은 독립적이면서도 통합된 구조:
+- **Factory Pattern**: 각 모듈은 `get_*()` 팩토리 함수 제공
+- **Logger 통합**: 모든 모듈이 통합 로깅 시스템 사용
+- **Exception 사용**: 모든 에러를 커스텀 예외로 처리
+- **GUI Base Class**: 모든 GUI 뷰가 `BaseView` 상속
+
+---
+
 ## 📂 디렉토리 구조
 
 ```
 05_AndroidAppAutoTester/
 ├── docs/                    # 문서
 │   ├── SOFTWARE_DESIGN.md
+│   ├── PHASE1_COMPLETE.md   # Phase 1 완료 보고서
+│   ├── PHASE2_COMPLETE.md   # Phase 2 완료 보고서
 │   └── TODO.md
 ├── config/                  # 설정 파일
 │   ├── apps.json.sample
 │   └── settings.json.sample
 ├── src/                     # 소스 코드
 │   ├── __init__.py
-│   ├── platform_utils.py   # OS별 유틸리티
-│   ├── config_manager.py   # 설정 관리
-│   ├── device_manager.py   # 디바이스 연결 관리
-│   ├── ui_explorer.py      # UI 자동 탐색
-│   ├── log_collector.py    # 로그 수집
-│   ├── test_engine.py     # 테스트 실행 엔진
-│   ├── report_generator.py # 리포트 생성
-│   ├── main.py          # CLI 메인
-│   └── gui/            # GUI 모듈
+│   ├── exceptions.py        # 커스텀 예외 계층 구조 (26 classes)
+│   ├── platform_utils.py    # OS별 유틸리티
+│   ├── config_manager.py    # 설정 관리
+│   ├── device_manager.py    # 디바이스 연결 관리
+│   ├── ui_explorer.py       # UI 자동 탐색
+│   ├── log_collector.py     # 로그 수집
+│   ├── test_engine.py       # 테스트 실행 엔진
+│   ├── report_generator.py  # 리포트 생성
+│   ├── main.py              # CLI 메인
+│   ├── utils/               # 유틸리티 모듈
+│   │   └── logger.py        # 통합 로깅 시스템
+│   └── gui/                 # GUI 모듈
 │       ├── __init__.py
-│       ├── main_window.py      # 메인 윈도우
-│       ├── devices_view.py     # 디바이스 뷰
-│       ├── apps_view.py        # 앱 뷰
-│       ├── config_view.py      # 설정 뷰
-│       ├── test_view.py        # 테스트 뷰
-│       └── report_view.py     # 리포트 뷰
+│       ├── base_view.py         # GUI 뷰 베이스 클래스
+│       ├── main_window.py       # 메인 윈도우
+│       ├── devices_view.py      # 디바이스 뷰
+│       ├── apps_view.py         # 앱 뷰
+│       ├── config_view.py       # 설정 뷰
+│       ├── test_view.py         # 테스트 뷰
+│       └── report_view.py       # 리포트 뷰
 ├── tests/                   # 단위 테스트
 │   ├── test_phase1.py   # 테스트 Phase 1
 │   ├── test_phase2.py   # 테스트 Phase 2
@@ -277,7 +331,7 @@ python -m src.main config --reset
 │   └── report_template.md
 ├── reports/                 # 생성된 리포트
 ├── screenshots/             # 스크린샷
-├── logs/                    # 로그 파일
+├── logs/                    # 로그 파일 (세션별 로그 저장)
 ├── requirements.txt         # Python 의존성
 ├── setup_windows.bat        # Windows 설치 스크립트
 ├── setup_ubuntu.sh         # Ubuntu 설치 스크립트

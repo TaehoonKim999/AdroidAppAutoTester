@@ -8,9 +8,14 @@ import customtkinter as ctk
 from typing import Optional, List
 
 from ..config_manager import ConfigManager, AppConfig
+from .base_view import BaseView
+
+from ..utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
-class AppsView(ctk.CTkFrame):
+class AppsView(BaseView):
     """
     View for managing app configurations and viewing installed apps.
     
@@ -27,92 +32,28 @@ class AppsView(ctk.CTkFrame):
     def __init__(self, parent, config_manager: ConfigManager, main_window):
         """
         Initialize apps view.
-        
+
         Args:
             parent: Parent widget
             config_manager: ConfigManager instance
             main_window: Reference to main window
         """
-        super().__init__(parent)
-        
         self.config_manager = config_manager
-        self.main_window = main_window
-        self.device_manager = main_window.device_manager
+        # Call parent __init__ which triggers lifecycle hooks
+        super().__init__(parent, main_window)
+
+    def _setup_state(self):
+        """Initialize apps view state."""
+        self.device_manager = self.main_window.device_manager
         self.apps: List[AppConfig] = []
         self.installed_apps: List[dict] = []
         self._installed_apps_loaded = False
-        
-        # Build UI
-        self._build_ui()
-        
-        # Load configured apps only (installed apps will load when tab is selected)
-        self._load_apps()
-
-    def _bind_mousewheel(self, widget):
-        """
-        Bind mouse wheel scrolling to a scrollable widget.
-
-        Args:
-            widget: CTkScrollableFrame to bind mouse wheel events
-        """
-        # CTkScrollableFrame has _parent_canvas attribute for internal canvas
-        def on_mousewheel(event):
-            try:
-                # Windows and MacOS
-                if event.delta:
-                    widget._parent_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-            except Exception:
-                pass
-
-        def on_mousewheel_linux_up(event):
-            try:
-                widget._parent_canvas.yview_scroll(-1, "units")
-            except Exception:
-                pass
-
-        def on_mousewheel_linux_down(event):
-            try:
-                widget._parent_canvas.yview_scroll(1, "units")
-            except Exception:
-                pass
-
-        def bind_to_widget(w):
-            """Recursively bind mouse wheel to widget and all its children."""
-            try:
-                w.bind("<MouseWheel>", on_mousewheel, add="+")
-                w.bind("<Button-4>", on_mousewheel_linux_up, add="+")
-                w.bind("<Button-5>", on_mousewheel_linux_down, add="+")
-            except Exception:
-                pass
-
-            # Bind to all children recursively
-            try:
-                for child in w.winfo_children():
-                    bind_to_widget(child)
-            except Exception:
-                pass
-
-        # Bind to the scrollable frame and all its children
-        bind_to_widget(widget)
-
-        # Also bind to the internal canvas
-        try:
-            widget._parent_canvas.bind("<MouseWheel>", on_mousewheel, add="+")
-            widget._parent_canvas.bind("<Button-4>", on_mousewheel_linux_up, add="+")
-            widget._parent_canvas.bind("<Button-5>", on_mousewheel_linux_down, add="+")
-        except Exception:
-            pass
 
     def _build_ui(self):
         """Build apps view UI."""
         # Title
-        title_label = ctk.CTkLabel(
-            self,
-            text="App Configurations",
-            font=ctk.CTkFont(size=20, weight="bold")
-        )
-        title_label.pack(pady=(20, 10))
-        
+        self._build_title("App Configurations")
+
         # Tabview for configured and installed apps
         self.tabview = ctk.CTkTabview(
             self,
@@ -120,14 +61,14 @@ class AppsView(ctk.CTkFrame):
             height=500
         )
         self.tabview.pack(fill="both", expand=True, padx=10, pady=10)
-        
+
         # Add tabs
         self.tabview.add("Configured Apps")
         self.tabview.add("Installed Apps")
-        
+
         # Configured Apps Tab
         self._build_configured_apps_tab()
-        
+
         # Installed Apps Tab
         self._build_installed_apps_tab()
     
@@ -147,23 +88,19 @@ class AppsView(ctk.CTkFrame):
             width=120
         )
         add_btn.pack(side="left", padx=5, pady=5)
-        
+
         # Refresh button
         refresh_btn = ctk.CTkButton(
             buttons_frame,
             text="🔄 Refresh",
-            command=self._load_apps,
+            command=self._load_data,
             width=120
         )
         refresh_btn.pack(side="left", padx=5, pady=5)
-        
-        # Configured apps list
-        self.configured_apps_frame = ctk.CTkScrollableFrame(
-            tab_frame
-        )
-        self.configured_apps_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Enable mouse wheel scrolling
+        # Configured apps list
+        self.configured_apps_frame = ctk.CTkScrollableFrame(tab_frame)
+        self.configured_apps_frame.pack(fill="both", expand=True, padx=10, pady=10)
         self._bind_mousewheel(self.configured_apps_frame)
         
         # App info frame
@@ -205,24 +142,20 @@ class AppsView(ctk.CTkFrame):
         self.device_status_label.pack(side="right", padx=10, pady=5)
         
         # Installed apps list
-        self.installed_apps_frame = ctk.CTkScrollableFrame(
-            tab_frame
-        )
+        self.installed_apps_frame = ctk.CTkScrollableFrame(tab_frame)
         self.installed_apps_frame.pack(fill="both", expand=True, padx=10, pady=10)
-
-        # Enable mouse wheel scrolling
         self._bind_mousewheel(self.installed_apps_frame)
 
         # Show placeholder message initially
         self._show_no_installed_apps("Click Refresh to load installed apps")
-    
-    def _load_apps(self):
+
+    def _load_data(self):
         """Load and display configured apps."""
         try:
             self.apps = self.config_manager.load_apps()
         except Exception as e:
-            self.main_window._update_status(f"Error loading apps: {e}")
-            print(f"[ERROR] Failed to load apps: {e}")
+            self.update_status(f"Error loading apps: {e}")
+            logger.error(f"Failed to load apps: {e}")
             return
         
         # Clear current apps
@@ -237,7 +170,7 @@ class AppsView(ctk.CTkFrame):
                 font=ctk.CTkFont(size=14)
             )
             no_apps_label.pack(pady=20)
-            self.main_window._update_status("No apps configured")
+            self.update_status("No apps configured")
             return
         
         for i, app in enumerate(self.apps, 1):
@@ -291,9 +224,9 @@ class AppsView(ctk.CTkFrame):
             delete_btn.pack(side="right", padx=5, pady=20)
 
         # Rebind mousewheel to include new widgets
-        self._bind_mousewheel(self.configured_apps_frame)
+        self.rebind_mousewheel(self.configured_apps_frame)
 
-        self.main_window._update_status(f"Found {len(self.apps)} configured app(s)")
+        self.update_status(f"Found {len(self.apps)} configured app(s)")
     
     def _load_installed_apps(self):
         """Load and display installed apps from device."""
@@ -369,10 +302,10 @@ class AppsView(ctk.CTkFrame):
                 add_btn.pack(side="right", padx=10, pady=20)
 
             # Rebind mousewheel to include new widgets
-            self._bind_mousewheel(self.installed_apps_frame)
+            self.rebind_mousewheel(self.installed_apps_frame)
 
             self._installed_apps_loaded = True
-            self.main_window._update_status(f"Loaded {len(self.installed_apps[:100])} installed app(s)")
+            self.update_status(f"Loaded {len(self.installed_apps[:100])} installed app(s)")
         
         except Exception as e:
             self.device_status_label.configure(
@@ -380,7 +313,7 @@ class AppsView(ctk.CTkFrame):
                 text_color="#DC3545"
             )
             self._show_no_installed_apps(f"Error: {str(e)}")
-            self.main_window._update_status(f"Error loading installed apps: {e}")
+            self.update_status(f"Error loading installed apps: {e}")
     
     def _show_no_installed_apps(self, message: str):
         """Show message when no apps are available."""
@@ -448,16 +381,16 @@ class AppsView(ctk.CTkFrame):
                 if app.validate():
                     self.apps.append(app)
                     self.config_manager.save_apps(self.apps)
-                    self._load_apps()
+                    self._load_data()
                     dialog.destroy()
-                    
+
                     # Switch to configured apps tab
                     self.tabview.set("Configured Apps")
-                    self.main_window._update_status("App added successfully")
+                    self.update_status("App added successfully")
                 else:
-                    self.main_window._update_status("Invalid app configuration")
+                    self.update_status("Invalid app configuration")
             except Exception as e:
-                self.main_window._update_status(f"Error: {e}")
+                self.update_status(f"Error: {e}")
         
         save_btn = ctk.CTkButton(
             dialog,
@@ -524,13 +457,13 @@ class AppsView(ctk.CTkFrame):
                 if app.validate():
                     self.apps.append(app)
                     self.config_manager.save_apps(self.apps)
-                    self._load_apps()
+                    self._load_data()
                     dialog.destroy()
-                    self.main_window._update_status("App added successfully")
+                    self.update_status("App added successfully")
                 else:
-                    self.main_window._update_status("Invalid app configuration")
+                    self.update_status("Invalid app configuration")
             except Exception as e:
-                self.main_window._update_status(f"Error: {e}")
+                self.update_status(f"Error: {e}")
         
         save_btn = ctk.CTkButton(
             dialog,
@@ -590,13 +523,13 @@ class AppsView(ctk.CTkFrame):
                 
                 if app.validate():
                     self.config_manager.save_apps(self.apps)
-                    self._load_apps()
+                    self._load_data()
                     dialog.destroy()
-                    self.main_window._update_status("App updated successfully")
+                    self.update_status("App updated successfully")
                 else:
-                    self.main_window._update_status("Invalid app configuration")
+                    self.update_status("Invalid app configuration")
             except Exception as e:
-                self.main_window._update_status(f"Error: {e}")
+                self.update_status(f"Error: {e}")
         
         save_btn = ctk.CTkButton(
             dialog,
@@ -616,5 +549,5 @@ class AppsView(ctk.CTkFrame):
         if app in self.apps:
             self.apps.remove(app)
             self.config_manager.save_apps(self.apps)
-            self._load_apps()
-            self.main_window._update_status("App deleted")
+            self._load_data()
+            self.update_status("App deleted")

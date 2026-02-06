@@ -15,6 +15,10 @@ from .config_view import ConfigView
 from .test_view import TestView
 from .report_view import ReportView
 
+from ..utils.logger import get_logger
+
+logger = get_logger(__name__)
+
 
 class MainWindow(ctk.CTk):
     """
@@ -159,7 +163,7 @@ class MainWindow(ctk.CTk):
             for widget in self.content_frame.winfo_children():
                 widget.destroy()
         except Exception as e:
-            print(f"[ERROR] Failed to clear content: {e}")
+            logger.error(f"Failed to clear content: {e}")
     
     def _show_devices_view(self):
         """Show devices view."""
@@ -239,9 +243,8 @@ class MainWindow(ctk.CTk):
             view_name: Name of the view that failed
             error: Exception that occurred
         """
-        print(f"[ERROR] Failed to load {view_name} view: {error}")
+        logger.error(f"Failed to load {view_name} view: {error}")
         import traceback
-        traceback.print_exc()
         self._update_status(f"Error loading {view_name} view")
         
         # Show error label
@@ -263,7 +266,7 @@ class MainWindow(ctk.CTk):
         try:
             self.status_label.configure(text=message)
         except Exception as e:
-            print(f"[ERROR] Failed to update status: {e}")
+            logger.error(f"Failed to update status: {e}")
     
     def _update_device_status(self, device_info=None):
         """
@@ -284,7 +287,7 @@ class MainWindow(ctk.CTk):
                     text_color="#888888"
                 )
         except Exception as e:
-            print(f"[ERROR] Failed to update device status: {e}")
+            logger.error(f"Failed to update device status: {e}")
     
     def set_device_manager(self, device_manager: DeviceManager):
         """
@@ -305,8 +308,6 @@ def run_gui():
         app = MainWindow()
         app.mainloop()
     except KeyboardInterrupt:
-        print("\nApplication interrupted by user")
+        logger.info("Application interrupted by user")
     except Exception as e:
-        print(f"[ERROR] Fatal error in GUI: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Fatal error in GUI: {e}", exc_info=True)

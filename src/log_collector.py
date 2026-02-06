@@ -15,6 +15,10 @@ from pathlib import Path
 from typing import List, Optional
 
 from .platform_utils import get_platform_utils
+from .utils.logger import get_logger
+from .exceptions import LogCollectionError, LogParseError
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -150,16 +154,16 @@ class LogCollector:
             duration: Collection duration in seconds (None for continuous)
         """
         if self.collecting:
-            print("[WARNING] Log collection already in progress")
+            logger.warning("Log collection already in progress")
             return
         
         # Prepare log file
         self.log_file = self._prepare_log_file()
-        
-        print(f"[INFO] Starting log collection")
-        print(f"[INFO] Filter: {self.log_filter}")
+
+        logger.info("Starting log collection")
+        logger.info(f"Filter: {self.log_filter}")
         if self.package_filter:
-            print(f"[INFO] Package: {self.package_filter}")
+            logger.info(f"Package: {self.package_filter}")
         
         # Clear existing logcat buffer
         self._clear_logcat_buffer()
@@ -186,8 +190,8 @@ class LogCollector:
         """
         if not self.collecting:
             return LogCollectionResult()
-        
-        print("[INFO] Stopping log collection")
+
+        logger.info("Stopping log collection")
         self.collecting = False
         
         # Stop logcat process
@@ -218,12 +222,12 @@ class LogCollector:
             duration=duration_time,
             log_file=self.log_file
         )
-        
-        print(f"[INFO] Log collection completed")
-        print(f"[INFO] Total entries: {result.total_entries}")
-        print(f"[INFO] Errors: {result.error_count}, Warnings: {result.warning_count}")
-        print(f"[INFO] Duration: {duration_time:.2f}s")
-        
+
+        logger.info("Log collection completed")
+        logger.info(f"Total entries: {result.total_entries}")
+        logger.info(f"Errors: {result.error_count}, Warnings: {result.warning_count}")
+        logger.info(f"Duration: {duration_time:.2f}s")
+
         return result
     
     def get_entries(self, level: Optional[str] = None) -> List[LogEntry]:
@@ -366,12 +370,12 @@ class LogCollector:
                     
                     # Parse and filter log
                     self._parse_log_line(line)
-                    
-                except Exception as e:
-                    print(f"[WARNING] Error reading log line: {e}")
-            
-        except Exception as e:
-            print(f"[ERROR] Log collection failed: {e}")
+
+                except LogParseError as e:
+                    logger.warning(f"Error reading log line: {e}")
+
+        except LogCollectionError as e:
+            logger.error(f"Log collection failed: {e}", exc_info=True)
         finally:
             self.collecting = False
             if self.log_process:
@@ -455,11 +459,11 @@ class LogCollector:
                         f"{entry.timestamp} {entry.pid:5d} {entry.tid:5d} "
                         f"{entry.level} {entry.tag:30s}: {entry.message}\n"
                     )
-            
-            print(f"[OK] Logs saved to: {self.log_file}")
-            
-        except Exception as e:
-            print(f"[ERROR] Failed to save logs: {e}")
+
+            logger.info(f"Logs saved to: {self.log_file}")
+
+        except LogCollectionError as e:
+            logger.error(f"Failed to save logs: {e}")
 
 
 def get_log_collector(

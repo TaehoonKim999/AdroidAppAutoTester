@@ -12,6 +12,10 @@ from typing import List, Optional
 
 from .platform_utils import get_platform_utils
 from .test_engine import TestResult
+from .utils.logger import get_logger
+from .exceptions import ReportError, ReportGenerationError
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -109,15 +113,15 @@ class ReportGenerator:
                 elif format_type == "json":
                     file_path = self.generate_json_report(report_data)
                 else:
-                    print(f"[WARNING] Unknown format: {format_type}")
+                    logger.warning(f"Unknown format: {format_type}")
                     continue
                 
                 if file_path:
                     generated_files.append(file_path)
-                    print(f"[OK] Generated {format_type.upper()} report: {file_path}")
-            
-            except Exception as e:
-                print(f"[ERROR] Failed to generate {format_type} report: {e}")
+                    logger.info(f"Generated {format_type.upper()} report: {file_path}")
+
+            except ReportGenerationError as e:
+                logger.error(f"Failed to generate {format_type} report: {e}")
         
         return generated_files
     
@@ -182,9 +186,9 @@ class ReportGenerator:
                 f.write("="*80 + "\n")
             
             return file_path
-            
-        except Exception as e:
-            print(f"[ERROR] Failed to generate text report: {e}")
+
+        except ReportGenerationError as e:
+            logger.error(f"Failed to generate text report: {e}")
             return None
     
     def generate_html_report(self, report_data: ReportData) -> Optional[Path]:
@@ -208,9 +212,9 @@ class ReportGenerator:
                 f.write(html_content)
             
             return file_path
-            
-        except Exception as e:
-            print(f"[ERROR] Failed to generate HTML report: {e}")
+
+        except ReportGenerationError as e:
+            logger.error(f"Failed to generate HTML report: {e}")
             return None
     
     def generate_json_report(self, report_data: ReportData) -> Optional[Path]:
@@ -226,7 +230,7 @@ class ReportGenerator:
         try:
             import json
         except ImportError:
-            print("[ERROR] json module not available")
+            logger.error("json module not available")
             return None
         
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -238,9 +242,9 @@ class ReportGenerator:
                 json.dump(report_data.to_dict(), f, indent=2)
             
             return file_path
-            
-        except Exception as e:
-            print(f"[ERROR] Failed to generate JSON report: {e}")
+
+        except ReportGenerationError as e:
+            logger.error(f"Failed to generate JSON report: {e}")
             return None
     
     def _prepare_report_data(

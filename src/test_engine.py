@@ -16,6 +16,11 @@ from .device_manager import DeviceManager, DeviceInfo
 from .log_collector import LogCollector, LogCollectionResult
 from .platform_utils import get_platform_utils
 from .ui_explorer import UIExplorer, ExplorationResult
+from .utils.logger import get_session_logger
+from .exceptions import (
+    TestError, TestFailedError, UIExplorationError,
+    LogCollectionError, DeviceError, ADBError
+)
 
 
 @dataclass
@@ -98,7 +103,11 @@ class TestEngine:
         self.device_manager = device_manager
         self.settings = settings
         self.platform_utils = get_platform_utils()
-        
+
+        # Initialize logger with session ID
+        session_id = f"test_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        self.logger = get_session_logger(__name__, session_id=session_id)
+
         # Initialize dependent components
         self.ui_explorer: Optional[UIExplorer] = None
         self.log_collector: Optional[LogCollector] = None
@@ -113,13 +122,13 @@ class TestEngine:
         Returns:
             TestResult: Test result
         """
-        print(f"\n{'='*60}")
-        print(f"Testing: {app_config.name}")
-        print(f"Package: {app_config.package}")
-        print(f"Activity: {app_config.activity}")
-        print(f"Duration: {app_config.test_duration}s")
-        print(f"Actions: {', '.join(app_config.test_actions)}")
-        print(f"{'='*60}\n")
+        self.logger.info("=" * 60)
+        self.logger.info(f"Testing: {app_config.name}")
+        self.logger.info(f"Package: {app_config.package}")
+        self.logger.info(f"Activity: {app_config.activity}")
+        self.logger.info(f"Duration: {app_config.test_duration}s")
+        self.logger.info(f"Actions: {', '.join(app_config.test_actions)}")
+        self.logger.info("=" * 60)
         
         result = TestResult(
             app_name=app_config.name,
@@ -136,7 +145,7 @@ class TestEngine:
                 result.retry_count = attempt
                 
                 if attempt > 0:
-                    print(f"\n[INFO] Retry attempt {attempt}/{self.settings.max_test_retries}")
+                    self.logger.info(f"Retry attempt {attempt}/{self.settings.max_test_retries}")
                     time.sleep(2)  # Wait before retry
                 
                 # Run the test
@@ -156,10 +165,8 @@ class TestEngine:
                     if screenshot:
                         result.screenshot_files.append(screenshot)
         
-        except Exception as e:
-            print(f"[ERROR] Test execution failed: {e}")
-            import traceback
-            traceback.print_exc()
+        except (TestFailedError, DeviceError, Exception) as e:
+            self.logger.error(f"Test execution failed: {e}", exc_info=True)
             result.success = False
             result.error_message = str(e)
             
@@ -175,8 +182,8 @@ class TestEngine:
         # Stop app
         try:
             self.device_manager.stop_app(app_config.package)
-        except Exception as e:
-            print(f"[WARNING] Error stopping app: {e}")
+        except (ADBError, DeviceError) as e:
+            self.logger.warning(f"Error stopping app: {e}")
         
         # Print result summary
         self._print_test_summary(result)
@@ -194,20 +201,21 @@ class TestEngine:
             List of TestResult objects
         """
         results = []
-        
-        print(f"\n{'='*60}")
-        print(f"Starting test run for {len(app_configs)} app(s)")
-        print(f"{'='*60}\n")
-        
+
+        self.logger.info("=" * 60)
+        self.logger.info(f"Starting test run for {len(app_configs)} app(s)")
+        self.logger.info("=" * 60)
+
         for i, app_config in enumerate(app_configs, 1):
-            print(f"\n[INFO] Test {i}/{len(app_configs)}")
             
+            self.logger.info(f"Running test {i}/{len(app_configs)}: {app_config.name}")
+
             result = self.run_test(app_config)
             results.append(result)
             
             # Delay between apps
             if i < len(app_configs):
-                print(f"\n[INFO] Waiting {self.settings.delay_between_apps}s before next test...")
+                
                 time.sleep(self.settings.delay_between_apps)
         
         # Print overall summary
@@ -232,15 +240,15 @@ class TestEngine:
         Returns:
             bool: True if successful, False otherwise
         """
-        print(f"[INFO] Starting test attempt for {app_config.name}")
+        
         
         # Start app
         if not self.device_manager.start_app(app_config.package, app_config.activity):
             result.error_message = "Failed to start app"
-            print(f"[ERROR] Failed to start app {app_config.package}")
+            
             return False
         
-        print(f"[INFO] App started successfully")
+        
         
         # Initialize components
         self._initialize_components(app_config)
@@ -248,57 +256,56 @@ class TestEngine:
         # Start log collection (async)
         try:
             if self.settings.collect_logcat and self.log_collector:
-                print(f"[INFO] Starting log collection")
+
+
                 self.log_collector.start_collection(app_config.test_duration)
-        except Exception as e:
-            print(f"[WARNING] Failed to start log collection: {e}")
-        
+        except LogCollectionError as e:
+            self.logger.warning(f"Failed to start log collection: {e}")
+
         # Start UI exploration (blocks for duration)
         exploration_result = None
         if self.ui_explorer:
             try:
-                print(f"[INFO] Starting UI exploration for {app_config.name}")
-                print(f"[INFO] Expected duration: {app_config.test_duration}s")
-                
+                self.logger.info(f"Starting UI exploration for {app_config.name}")
+                self.logger.info(f"Expected duration: {app_config.test_duration}s")
+
                 exploration_start = time.time()
                 exploration_result = self.ui_explorer.explore(
                     app_config.test_duration,
                     app_config.test_actions
                 )
                 exploration_duration = time.time() - exploration_start
-                
-                print(f"[INFO] UI exploration completed for {app_config.name}")
-                print(f"[INFO] Actual duration: {exploration_duration:.1f}s")
-                
+
+                self.logger.info(f"UI exploration completed for {app_config.name}")
+                self.logger.info(f"Actual duration: {exploration_duration:.1f}s")
+
                 # Update result with exploration data
                 result.screens_visited = exploration_result.screens_visited
                 result.elements_interacted = exploration_result.elements_interacted
                 result.actions_performed = exploration_result.actions_performed
                 result.errors_found.extend(exploration_result.errors_found)
-            except Exception as e:
-                print(f"[ERROR] UI exploration failed: {e}")
-                import traceback
-                traceback.print_exc()
+            except UIExplorationError as e:
+                self.logger.error(f"UI exploration failed: {e}", exc_info=True)
                 result.error_message = f"Exploration error: {e}"
                 result.errors_found.append(f"Exploration failed: {e}")
                 # Still continue to stop log collection
                 exploration_result = None
         else:
-            print(f"[WARNING] UI explorer not initialized")
+            self.logger.warning("UI explorer not initialized")
             result.error_message = "UI explorer not initialized"
         
         # Stop log collection and get result
         log_result = None
         try:
             if self.settings.collect_logcat and self.log_collector:
-                print(f"[INFO] Stopping log collection")
+                self.logger.info("Stopping log collection")
                 log_result = self.log_collector.stop_collection()
                 result.log_file = log_result.log_file
                 # Add log errors if any
                 if log_result.error_count > 0:
                     result.errors_found.append(f"Logcat errors: {log_result.error_count}")
-        except Exception as e:
-            print(f"[WARNING] Failed to stop log collection: {e}")
+        except LogCollectionError as e:
+            self.logger.warning(f"Failed to stop log collection: {e}")
         
         # Take final screenshot only if errors found
         if exploration_result and exploration_result.errors_found:
@@ -320,18 +327,18 @@ class TestEngine:
         Args:
             app_config: App configuration
         """
-        print(f"[INFO] Initializing components for {app_config.name}")
+        
         
         # Initialize UI explorer
         try:
             if self.device_manager.device:
                 self.ui_explorer = UIExplorer(self.device_manager.device)
-                print(f"[INFO] UI explorer initialized")
+
             else:
-                print(f"[WARNING] Device not available for UI explorer")
+
                 self.ui_explorer = None
-        except Exception as e:
-            print(f"[WARNING] Failed to initialize UI explorer: {e}")
+        except (UIExplorationError, DeviceError) as e:
+
             self.ui_explorer = None
         
         # Initialize log collector
@@ -343,12 +350,12 @@ class TestEngine:
                     log_filter=self.settings.logcat_filter,
                     package_filter=app_config.package
                 )
-                print(f"[INFO] Log collector initialized for {device_info.serial}")
+
             else:
-                print(f"[WARNING] Device info not available for log collector")
+
                 self.log_collector = None
-        except Exception as e:
-            print(f"[WARNING] Failed to initialize log collector: {e}")
+        except LogCollectionError as e:
+
             self.log_collector = None
     
     def _take_screenshot(self, filename: str) -> Optional[Path]:
@@ -367,10 +374,10 @@ class TestEngine:
         try:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             full_filename = f"{filename}_{timestamp}.png"
-            
+
             return self.device_manager.take_screenshot(full_filename)
-        except Exception as e:
-            print(f"[WARNING] Failed to take screenshot: {e}")
+        except (DeviceError, ADBError) as e:
+
             return None
     
     def _take_error_screenshot(
@@ -393,58 +400,58 @@ class TestEngine:
     
     def _print_test_summary(self, result: TestResult) -> None:
         """Print test result summary."""
-        print(f"\n{'='*60}")
-        print(f"Test Summary: {result.app_name}")
-        print(f"{'='*60}")
-        print(f"Status: {'✅ SUCCESS' if result.success else '❌ FAILED'}")
-        print(f"Duration: {result.duration:.2f}s")
-        print(f"Retry Count: {result.retry_count}")
-        print(f"Screens Visited: {result.screens_visited}")
-        print(f"Elements Interacted: {result.elements_interacted}")
-        print(f"Actions Performed: {len(result.actions_performed)}")
+        self.logger.info("=" * 60)
+        self.logger.info(f"Test Summary: {result.app_name}")
+        self.logger.info("=" * 60)
+        self.logger.info(f"Status: {'✅ SUCCESS' if result.success else '❌ FAILED'}")
+        self.logger.info(f"Duration: {result.duration:.2f}s")
+        self.logger.info(f"Retry Count: {result.retry_count}")
+        self.logger.info(f"Screens Visited: {result.screens_visited}")
+        self.logger.info(f"Elements Interacted: {result.elements_interacted}")
+        self.logger.info(f"Actions Performed: {len(result.actions_performed)}")
         
         if result.errors_found:
-            print(f"\nErrors Found ({len(result.errors_found)}):")
+            self.logger.info(f"Errors Found ({len(result.errors_found)}):")
             for error in result.errors_found[:5]:  # Show first 5
-                print(f"  - {error}")
+                self.logger.info(f"  - {error}")
             if len(result.errors_found) > 5:
-                print(f"  ... and {len(result.errors_found) - 5} more")
+                self.logger.info(f"  ... and {len(result.errors_found) - 5} more")
         
         if result.log_file:
-            print(f"\nLog File: {result.log_file}")
+            self.logger.info(f"Log File: {result.log_file}")
         
         if result.screenshot_files:
-            print(f"\nScreenshots ({len(result.screenshot_files)}):")
+            self.logger.info(f"Screenshots ({len(result.screenshot_files)}):")
             for screenshot in result.screenshot_files:
-                print(f"  - {screenshot}")
+                self.logger.info(f"  - {screenshot}")
         
         if result.error_message:
-            print(f"\nError: {result.error_message}")
-        
-        print(f"{'='*60}\n")
+            self.logger.info(f"Error: {result.error_message}")
+
+        self.logger.info("=" * 60)
     
     def _print_overall_summary(self, results: List[TestResult]) -> None:
         """Print overall test run summary."""
-        print(f"\n{'='*60}")
-        print(f"Overall Test Summary")
-        print(f"{'='*60}")
+        self.logger.info("=" * 60)
+        self.logger.info("Overall Test Summary")
+        self.logger.info("=" * 60)
         
         total = len(results)
         successful = sum(1 for r in results if r.success)
         failed = total - successful
         
-        print(f"Total Tests: {total}")
-        print(f"Successful: {successful} ✅")
-        print(f"Failed: {failed} ❌")
+        self.logger.info(f"Total Tests: {total}")
+        self.logger.info(f"Successful: {successful} ✅")
+        self.logger.info(f"Failed: {failed} ❌")
         
         if total > 0:
             success_rate = (successful / total) * 100
-            print(f"Success Rate: {success_rate:.1f}%")
+            self.logger.info(f"Success Rate: {success_rate:.1f}%")
         
         total_duration = sum(r.duration for r in results)
-        print(f"Total Duration: {total_duration:.2f}s")
-        
-        print(f"\n{'='*60}\n")
+        self.logger.info(f"Total Duration: {total_duration:.2f}s")
+
+        self.logger.info("=" * 60)
 
 
 def get_test_engine(

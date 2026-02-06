@@ -11,6 +11,11 @@ from pathlib import Path
 from typing import List, Optional
 
 from .platform_utils import get_platform_utils
+from .exceptions import ConfigError, ConfigNotFoundError, ConfigValidationError, ConfigParseError
+from .utils.logger import get_logger
+
+# Module-level logger
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -185,12 +190,12 @@ class ConfigManager:
             List of AppConfig objects
         
         Raises:
-            FileNotFoundError: If apps.json doesn't exist
-            json.JSONDecodeError: If JSON is invalid
-            ValueError: If configuration is invalid
+            ConfigNotFoundError: If apps.json doesn't exist
+            ConfigParseError: If JSON is invalid
+            ConfigValidationError: If configuration is invalid
         """
         if not self.apps_file.exists():
-            raise FileNotFoundError(
+            raise ConfigNotFoundError(
                 f"Apps configuration file not found: {self.apps_file}\n"
                 f"Please create file or copy from {self.apps_file}.sample"
             )
@@ -199,13 +204,13 @@ class ConfigManager:
             data = json.load(f)
         
         if "apps" not in data:
-            raise ValueError("Invalid apps.json: 'apps' key not found")
+            raise ConfigValidationError("Invalid apps.json: 'apps' key not found")
         
         apps = []
         for app_data in data["apps"]:
             app_config = AppConfig.from_dict(app_data)
             if not app_config.validate():
-                raise ValueError(f"Invalid app configuration: {app_data}")
+                raise ConfigValidationError(f"Invalid app configuration: {app_data}")
             apps.append(app_config)
         
         return apps
@@ -218,12 +223,12 @@ class ConfigManager:
             GlobalSettings object
         
         Raises:
-            FileNotFoundError: If settings.json doesn't exist
-            json.JSONDecodeError: If JSON is invalid
-            ValueError: If settings are invalid
+            ConfigNotFoundError: If settings.json doesn't exist
+            ConfigParseError: If JSON is invalid
+            ConfigValidationError: If settings are invalid
         """
         if not self.settings_file.exists():
-            raise FileNotFoundError(
+            raise ConfigNotFoundError(
                 f"Settings file not found: {self.settings_file}\n"
                 f"Please create file or copy from {self.settings_file}.sample"
             )
@@ -233,8 +238,8 @@ class ConfigManager:
         
         settings = GlobalSettings.from_dict(data)
         if not settings.validate():
-            raise ValueError(f"Invalid settings: {data}")
-        
+            raise ConfigValidationError(f"Invalid settings: {data}")
+
         return settings
     
     def save_apps(self, apps: List[AppConfig]) -> None:

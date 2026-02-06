@@ -8,9 +8,10 @@ import customtkinter as ctk
 from typing import Optional, List, Callable
 
 from ..device_manager import DeviceInfo, DeviceManager
+from .base_view import BaseView
 
 
-class DevicesView(ctk.CTkFrame):
+class DevicesView(BaseView):
     """
     View for managing connected Android devices.
     
@@ -25,113 +26,42 @@ class DevicesView(ctk.CTkFrame):
     def __init__(self, parent, device_manager: Optional[DeviceManager], main_window):
         """
         Initialize devices view.
-        
+
         Args:
             parent: Parent widget
             device_manager: DeviceManager instance
             main_window: Reference to main window
         """
-        super().__init__(parent)
-        
         self.device_manager = device_manager
-        self.main_window = main_window
+        # Call parent __init__ which triggers lifecycle hooks
+        super().__init__(parent, main_window)
+
+    def _setup_state(self):
+        """Initialize devices view state."""
         self.selected_device: Optional[DeviceInfo] = None
-        
-        # Build UI
-        self._build_ui()
-        
-        # Load devices
-        self._load_devices()
-
-    def _bind_mousewheel(self, widget):
-        """
-        Bind mouse wheel scrolling to a scrollable widget.
-
-        Args:
-            widget: CTkScrollableFrame to bind mouse wheel events
-        """
-        # CTkScrollableFrame has _parent_canvas attribute for internal canvas
-        def on_mousewheel(event):
-            try:
-                # Windows and MacOS
-                if event.delta:
-                    widget._parent_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-            except Exception:
-                pass
-
-        def on_mousewheel_linux_up(event):
-            try:
-                widget._parent_canvas.yview_scroll(-1, "units")
-            except Exception:
-                pass
-
-        def on_mousewheel_linux_down(event):
-            try:
-                widget._parent_canvas.yview_scroll(1, "units")
-            except Exception:
-                pass
-
-        def bind_to_widget(w):
-            """Recursively bind mouse wheel to widget and all its children."""
-            try:
-                w.bind("<MouseWheel>", on_mousewheel, add="+")
-                w.bind("<Button-4>", on_mousewheel_linux_up, add="+")
-                w.bind("<Button-5>", on_mousewheel_linux_down, add="+")
-            except Exception:
-                pass
-
-            # Bind to all children recursively
-            try:
-                for child in w.winfo_children():
-                    bind_to_widget(child)
-            except Exception:
-                pass
-
-        # Bind to the scrollable frame and all its children
-        bind_to_widget(widget)
-
-        # Also bind to the internal canvas
-        try:
-            widget._parent_canvas.bind("<MouseWheel>", on_mousewheel, add="+")
-            widget._parent_canvas.bind("<Button-4>", on_mousewheel_linux_up, add="+")
-            widget._parent_canvas.bind("<Button-5>", on_mousewheel_linux_down, add="+")
-        except Exception:
-            pass
 
     def _build_ui(self):
         """Build devices view UI."""
         # Title
-        title_label = ctk.CTkLabel(
-            self,
-            text="Connected Devices",
-            font=ctk.CTkFont(size=20, weight="bold")
-        )
-        title_label.pack(pady=(20, 10))
-        
+        self._build_title("Connected Devices")
+
         # Refresh button
         refresh_btn = ctk.CTkButton(
             self,
             text="🔄 Refresh",
-            command=self._load_devices,
+            command=self._load_data,
             width=120
         )
         refresh_btn.pack(pady=(0, 10))
-        
-        # Devices list
-        self.devices_frame = ctk.CTkScrollableFrame(
-            self,
-            height=400
-        )
-        self.devices_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Enable mouse wheel scrolling
-        self._bind_mousewheel(self.devices_frame)
-        
+        # Devices list
+        self.devices_frame = self._build_scrollable_frame(height=400)
+
         # Device info frame
         self.info_frame = ctk.CTkFrame(self, height=200)
         self.info_frame.pack(fill="x", padx=10, pady=(10, 20))
         self.info_frame.pack_propagate(False)
-        
+
         self.info_label = ctk.CTkLabel(
             self.info_frame,
             text="Select a device to see details",
@@ -139,18 +69,18 @@ class DevicesView(ctk.CTkFrame):
         )
         self.info_label.pack(expand=True, pady=20)
     
-    def _load_devices(self):
+    def _load_data(self):
         """Load and display connected devices."""
         # Clear current devices
         for widget in self.devices_frame.winfo_children():
             widget.destroy()
-        
+
         # Get devices
         if self.device_manager:
             devices = self.device_manager.list_devices()
         else:
             devices = []
-        
+
         # Display devices
         if not devices:
             no_devices_label = ctk.CTkLabel(
@@ -159,17 +89,12 @@ class DevicesView(ctk.CTkFrame):
                 font=ctk.CTkFont(size=14)
             )
             no_devices_label.pack(pady=20)
-            self.main_window._update_status("No devices found")
+            self.update_status("No devices found")
             return
-        
+
         for i, device in enumerate(devices, 1):
-            device_frame = ctk.CTkFrame(
-                self.devices_frame,
-                height=80
-            )
-            device_frame.pack(fill="x", pady=5, padx=5)
-            device_frame.pack_propagate(False)
-            
+            device_frame = self._create_item_frame(self.devices_frame)
+
             # Device number
             num_label = ctk.CTkLabel(
                 device_frame,
@@ -178,14 +103,14 @@ class DevicesView(ctk.CTkFrame):
                 width=30
             )
             num_label.pack(side="left", padx=10, pady=10)
-            
+
             # Device info
             info_text = f"Serial: {device.serial}"
             if device.model:
                 info_text += f"\nModel: {device.model}"
             if device.android_version:
                 info_text += f"\nAndroid: {device.android_version}"
-            
+
             info_label = ctk.CTkLabel(
                 device_frame,
                 text=info_text,
@@ -193,7 +118,7 @@ class DevicesView(ctk.CTkFrame):
                 anchor="w"
             )
             info_label.pack(side="left", padx=10, pady=10)
-            
+
             # Select button
             select_btn = ctk.CTkButton(
                 device_frame,
@@ -204,9 +129,9 @@ class DevicesView(ctk.CTkFrame):
             select_btn.pack(side="right", padx=10, pady=20)
 
         # Rebind mousewheel to include new widgets
-        self._bind_mousewheel(self.devices_frame)
+        self.rebind_mousewheel(self.devices_frame)
 
-        self.main_window._update_status(f"Found {len(devices)} device(s)")
+        self.update_status(f"Found {len(devices)} device(s)")
     
     def _select_device(self, device: DeviceInfo):
         """
@@ -225,9 +150,9 @@ class DevicesView(ctk.CTkFrame):
         new_device_manager = get_device_manager(device.serial)
         if new_device_manager and new_device_manager.connect():
             self.main_window.set_device_manager(new_device_manager)
-            self.main_window._update_status(f"Selected: {device.serial}")
+            self.update_status(f"Selected: {device.serial}")
         else:
-            self.main_window._update_status(f"Failed to connect: {device.serial}")
+            self.update_status(f"Failed to connect: {device.serial}")
     
     def _update_device_info(self, device: DeviceInfo):
         """

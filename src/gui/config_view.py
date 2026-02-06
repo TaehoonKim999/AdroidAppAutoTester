@@ -8,9 +8,10 @@ import customtkinter as ctk
 from typing import Optional, List
 
 from ..config_manager import ConfigManager, GlobalSettings
+from .base_view import BaseView
 
 
-class ConfigView(ctk.CTkFrame):
+class ConfigView(BaseView):
     """
     View for managing global settings.
     
@@ -25,106 +26,33 @@ class ConfigView(ctk.CTkFrame):
     def __init__(self, parent, config_manager: ConfigManager, main_window):
         """
         Initialize config view.
-        
+
         Args:
             parent: Parent widget
             config_manager: ConfigManager instance
             main_window: Reference to main window
         """
-        super().__init__(parent)
-        
         self.config_manager = config_manager
-        self.main_window = main_window
+        # Call parent __init__ which triggers lifecycle hooks
+        super().__init__(parent, main_window)
+
+    def _setup_state(self):
+        """Initialize config view state."""
         self.settings: Optional[GlobalSettings] = None
-        
-        # Entry widgets
         self.entries = {}
-        
-        # Build UI
-        self._build_ui()
-        
-        # Load settings
-        self._load_settings()
-
-    def _bind_mousewheel(self, widget):
-        """
-        Bind mouse wheel scrolling to a scrollable widget.
-
-        Args:
-            widget: CTkScrollableFrame to bind mouse wheel events
-        """
-        # CTkScrollableFrame has _parent_canvas attribute for internal canvas
-        def on_mousewheel(event):
-            try:
-                # Windows and MacOS
-                if event.delta:
-                    widget._parent_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-            except Exception:
-                pass
-
-        def on_mousewheel_linux_up(event):
-            try:
-                widget._parent_canvas.yview_scroll(-1, "units")
-            except Exception:
-                pass
-
-        def on_mousewheel_linux_down(event):
-            try:
-                widget._parent_canvas.yview_scroll(1, "units")
-            except Exception:
-                pass
-
-        def bind_to_widget(w):
-            """Recursively bind mouse wheel to widget and all its children."""
-            try:
-                w.bind("<MouseWheel>", on_mousewheel, add="+")
-                w.bind("<Button-4>", on_mousewheel_linux_up, add="+")
-                w.bind("<Button-5>", on_mousewheel_linux_down, add="+")
-            except Exception:
-                pass
-
-            # Bind to all children recursively
-            try:
-                for child in w.winfo_children():
-                    bind_to_widget(child)
-            except Exception:
-                pass
-
-        # Bind to the scrollable frame and all its children
-        bind_to_widget(widget)
-
-        # Also bind to the internal canvas
-        try:
-            widget._parent_canvas.bind("<MouseWheel>", on_mousewheel, add="+")
-            widget._parent_canvas.bind("<Button-4>", on_mousewheel_linux_up, add="+")
-            widget._parent_canvas.bind("<Button-5>", on_mousewheel_linux_down, add="+")
-        except Exception:
-            pass
 
     def _build_ui(self):
         """Build config view UI."""
         # Title
-        title_label = ctk.CTkLabel(
-            self,
-            text="Global Settings",
-            font=ctk.CTkFont(size=20, weight="bold")
-        )
-        title_label.pack(pady=(20, 10))
-        
-        # Settings frame
-        self.settings_frame = ctk.CTkScrollableFrame(
-            self,
-            height=450
-        )
-        self.settings_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        self._build_title("Global Settings")
 
-        # Enable mouse wheel scrolling
-        self._bind_mousewheel(self.settings_frame)
-        
+        # Settings frame
+        self.settings_frame = self._build_scrollable_frame(height=450)
+
         # Buttons frame
         buttons_frame = ctk.CTkFrame(self)
         buttons_frame.pack(fill="x", padx=10, pady=(10, 20))
-        
+
         # Save button
         save_btn = ctk.CTkButton(
             buttons_frame,
@@ -133,7 +61,7 @@ class ConfigView(ctk.CTkFrame):
             width=120
         )
         save_btn.pack(side="left", padx=5, pady=10)
-        
+
         # Reset button
         reset_btn = ctk.CTkButton(
             buttons_frame,
@@ -145,19 +73,19 @@ class ConfigView(ctk.CTkFrame):
         )
         reset_btn.pack(side="left", padx=5, pady=10)
     
-    def _load_settings(self):
+    def _load_data(self):
         """Load and display settings."""
         try:
             self.settings = self.config_manager.load_settings()
         except Exception as e:
-            self.main_window._update_status(f"Error loading settings: {e}")
+            self.update_status(f"Error loading settings: {e}")
             return
-        
+
         # Clear current settings
         for widget in self.settings_frame.winfo_children():
             widget.destroy()
         self.entries.clear()
-        
+
         # Display settings
         self._add_setting("Screenshot on Error", "bool", self.settings.screenshot_on_error)
         self._add_setting("Screenshot Interval (seconds, 0=disabled)", "int", self.settings.screenshot_interval)
@@ -167,9 +95,9 @@ class ConfigView(ctk.CTkFrame):
         self._add_setting("Delay Between Apps (seconds)", "int", self.settings.delay_between_apps)
 
         # Rebind mousewheel to include new widgets
-        self._bind_mousewheel(self.settings_frame)
+        self.rebind_mousewheel(self.settings_frame)
 
-        self.main_window._update_status("Settings loaded")
+        self.update_status("Settings loaded")
     
     def _add_setting(self, label: str, setting_type: str, value):
         """
@@ -283,14 +211,15 @@ class ConfigView(ctk.CTkFrame):
             if new_settings.validate():
                 self.config_manager.save_settings(new_settings)
                 self.settings = new_settings
-                self.main_window._update_status("Settings saved successfully")
+                self.update_status("Settings saved successfully")
             else:
-                self.main_window._update_status("Invalid settings")
+                self.update_status("Invalid settings")
         
         except Exception as e:
             import traceback
-            traceback.print_exc()
-            self.main_window._update_status(f"Error saving settings: {e}")
+
+
+            self.update_status(f"Error saving settings: {e}")
     
     def _reset_settings(self):
         """Reset settings to defaults."""
@@ -299,9 +228,9 @@ class ConfigView(ctk.CTkFrame):
             default_settings = GlobalSettings()
             self.config_manager.save_settings(default_settings)
             self._load_settings()
-            self.main_window._update_status("Settings reset to defaults")
+            self.update_status("Settings reset to defaults")
         except Exception as e:
-            self.main_window._update_status(f"Error resetting settings: {e}")
+            self.update_status(f"Error resetting settings: {e}")
     
     def _get_setting_value(self, label: str):
         """
@@ -317,7 +246,7 @@ class ConfigView(ctk.CTkFrame):
             entry, setting_type = self.entries.get(label, (None, None))
             
             if entry is None:
-                print(f"[WARNING] Entry not found for label: {label}")
+                logger.warning(f"Entry not found for label: {label}")
                 return None
             
             if setting_type == "bool":
@@ -331,7 +260,7 @@ class ConfigView(ctk.CTkFrame):
                         return 0
                     return int(value)
                 except ValueError as e:
-                    print(f"[WARNING] Invalid int value for {label}: {entry.get()}, using default")
+                    logger.warning(f"Invalid int value for {label}: {entry.get()}, using default")
                     return 0
             else:
                 # String type
@@ -341,8 +270,8 @@ class ConfigView(ctk.CTkFrame):
                         return ""
                     return str(value).strip()
                 except Exception as e:
-                    print(f"[WARNING] Error getting string value for {label}: {e}")
+                    logger.warning(f"Error getting string value for {label}: {e}")
                     return ""
         except Exception as e:
-            print(f"[ERROR] Error in _get_setting_value for {label}: {e}")
+            logger.error(f"Error in _get_setting_value for {label}: {e}")
             return None

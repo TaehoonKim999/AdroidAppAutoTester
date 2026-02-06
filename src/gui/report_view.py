@@ -9,101 +9,28 @@ from pathlib import Path
 from typing import Optional
 import webbrowser
 
+from .base_view import BaseView
 
-class ReportView(ctk.CTkFrame):
+
+class ReportView(BaseView):
     """
     View for displaying test reports.
-    
+
     Allows viewing and opening generated reports.
-    
+
     Attributes:
         main_window: Reference to main window
         reports_dir: Reports directory path
     """
-    
-    def __init__(self, parent, main_window):
-        """
-        Initialize report view.
 
-        Args:
-            parent: Parent widget
-            main_window: Reference to main window
-        """
-        super().__init__(parent)
-
-        self.main_window = main_window
+    def _setup_state(self):
+        """Initialize report view state."""
         self.reports_dir = Path("reports")
 
-        # Build UI
-        self._build_ui()
-
-        # Load reports
-        self._load_reports()
-
-    def _bind_mousewheel(self, widget):
-        """
-        Bind mouse wheel scrolling to a scrollable widget.
-
-        Args:
-            widget: CTkScrollableFrame to bind mouse wheel events
-        """
-        # CTkScrollableFrame has _parent_canvas attribute for internal canvas
-        def on_mousewheel(event):
-            try:
-                # Windows and MacOS
-                if event.delta:
-                    widget._parent_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-            except Exception:
-                pass
-
-        def on_mousewheel_linux_up(event):
-            try:
-                widget._parent_canvas.yview_scroll(-1, "units")
-            except Exception:
-                pass
-
-        def on_mousewheel_linux_down(event):
-            try:
-                widget._parent_canvas.yview_scroll(1, "units")
-            except Exception:
-                pass
-
-        def bind_to_widget(w):
-            """Recursively bind mouse wheel to widget and all its children."""
-            try:
-                w.bind("<MouseWheel>", on_mousewheel, add="+")
-                w.bind("<Button-4>", on_mousewheel_linux_up, add="+")
-                w.bind("<Button-5>", on_mousewheel_linux_down, add="+")
-            except Exception:
-                pass
-
-            # Bind to all children recursively
-            try:
-                for child in w.winfo_children():
-                    bind_to_widget(child)
-            except Exception:
-                pass
-
-        # Bind to the scrollable frame and all its children
-        bind_to_widget(widget)
-
-        # Also bind to the internal canvas
-        try:
-            widget._parent_canvas.bind("<MouseWheel>", on_mousewheel, add="+")
-            widget._parent_canvas.bind("<Button-4>", on_mousewheel_linux_up, add="+")
-            widget._parent_canvas.bind("<Button-5>", on_mousewheel_linux_down, add="+")
-        except Exception:
-            pass
-    
     def _build_ui(self):
         """Build report view UI."""
         # Title
-        title_label = ctk.CTkLabel(
-            self,
-            text="Test Reports",
-            font=ctk.CTkFont(size=20, weight="bold")
-        )
-        title_label.pack(pady=(20, 10))
+        self._build_title("Test Reports")
         
         # Buttons frame
         buttons_frame = ctk.CTkFrame(self)
@@ -130,15 +57,12 @@ class ReportView(ctk.CTkFrame):
         delete_all_btn.pack(side="right", padx=5, pady=10)
         
         # Reports list
-        self.reports_frame = ctk.CTkScrollableFrame(
-            self,
-            height=450
-        )
-        self.reports_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        self.reports_frame = self._build_scrollable_frame(height=450)
 
-        # Enable mouse wheel scrolling
-        self._bind_mousewheel(self.reports_frame)
-    
+    def _load_data(self):
+        """Load reports after UI is built."""
+        self._load_reports()
+
     def _load_reports(self):
         """Load and display test reports."""
         # Clear current reports
@@ -357,6 +281,8 @@ class ReportView(ctk.CTkFrame):
         
         # Show confirmation dialog
         from tkinter import messagebox
+
+
         confirm = messagebox.askyesno(
             "Delete All Reports",
             f"Are you sure you want to delete {len(report_files)} report file(s)?\n\nThis action cannot be undone."
@@ -373,7 +299,7 @@ class ReportView(ctk.CTkFrame):
                 report_file.unlink()
                 deleted_count += 1
             except Exception as e:
-                print(f"[ERROR] Failed to delete {report_file.name}: {e}")
+                logger.error(f"Failed to delete {report_file.name}: {e}")
                 failed_count += 1
         
         # Reload and update status
