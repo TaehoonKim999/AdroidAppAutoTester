@@ -431,13 +431,72 @@ class DeviceManager:
         
         return package
     
+    def _find_launcher_activity(self, package: str) -> Optional[str]:
+        """
+        Find the launcher activity for a package.
+        
+        Args:
+            package: Package name (e.g., "com.example.app")
+        
+        Returns:
+            Full activity string (e.g., "com.example.app/.MainActivity") or None
+        """
+        adb_cmd = self.platform_utils.get_adb_command()
+        
+        try:
+            # Use dumpsys package to find launcher activity
+            code, output, _ = self.platform_utils.run_command(
+                [adb_cmd, "-s", self.serial, "shell", "dumpsys", "package", package],
+                timeout=15
+            )
+            
+            if code != 0:
+                return None
+            
+            # Parse output for launchable activity
+            in_activities = False
+            for line in output.split('\n'):
+                # Check if we're in the activities section
+                if 'Activity Resolver Table:' in line and 'android.intent.action.MAIN' in line:
+                    in_activities = True
+                    continue
+                
+                if in_activities:
+                    # Look for activity lines
+                    if line.strip().startswith(package):
+                        # Extract activity name
+                        parts = line.strip().split()
+                        if len(parts) >= 2:
+                            activity = parts[1]
+                            # Clean up the activity name
+                            if activity.startswith(package):
+                                return f"{package}/{activity[len(package):]}"
+                            return activity
+            
+            # Alternative method: use dumpsys package for android.intent.action.MAIN
+            code, output, _ = self.platform_utils.run_command(
+                [adb_cmd, "-s", self.serial, "shell", "cmd", "package", "resolve-activity", "--brief", package + "/android.intent.action.MAIN"],
+                timeout=10
+            )
+            
+            if code == 0:
+                activity = output.strip()
+                if activity and '/' in activity:
+                    return activity
+            
+            return None
+            
+        except Exception as e:
+            print(f"[WARNING] Failed to find launcher activity for {package}: {e}")
+            return None
+    
     def start_app(self, package: str, activity: str) -> bool:
         """
         Start an application.
         
         Args:
             package: Android package name (e.g., "com.example.app")
-            activity: Activity name (e.g., ".MainActivity")
+            activity: Activity name (e.g., ".MainActivity"). If empty or None, finds launcher activity automatically.
         
         Returns:
             bool: True if successful, False otherwise
@@ -447,7 +506,20 @@ class DeviceManager:
             return False
         
         adb_cmd = self.platform_utils.get_adb_command()
-        full_activity = f"{package}/{activity}"
+        
+        # If activity is empty or None, find launcher activity automatically
+        if not activity or activity.strip() == "" or activity == ".MainActivity":
+            print(f"[INFO] Finding launcher activity for {package}...")
+            launcher_activity = self._find_launcher_activity(package)
+            if launcher_activity:
+                full_activity = launcher_activity
+                print(f"[INFO] Using launcher activity: {full_activity}")
+            else:
+                # Fallback to package name only (Android will try to launch main activity)
+                full_activity = package
+                print(f"[INFO] Using package name only: {full_activity}")
+        else:
+            full_activity = f"{package}/{activity}"
         
         try:
             print(f"[INFO] Starting app: {full_activity}")
