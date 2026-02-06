@@ -138,10 +138,8 @@ class ConfigView(ctk.CTkFrame):
         
         # Entry widget
         if setting_type == "bool":
-            entry = ctk.CTkSwitch(
-                setting_frame,
-                text=value
-            )
+            # Don't pass text to CTkSwitch to avoid issues
+            entry = ctk.CTkSwitch(setting_frame)
             if value:
                 entry.select()
             entry.pack(side="right", padx=10, pady=15)
