@@ -58,3 +58,9 @@ config/apps.json
 config/settings.json
 !config/apps.json.sample
 !config/settings.json.sample
+
+# Backup files
+*.backup
+
+# Development notes and progress tracking
+docs/
