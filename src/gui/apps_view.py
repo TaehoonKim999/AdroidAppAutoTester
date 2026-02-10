@@ -76,36 +76,43 @@ class AppsView(BaseView):
         """Build the configured apps tab."""
         tab_frame = self.tabview.tab("Configured Apps")
         
-        # Buttons frame
-        buttons_frame = ctk.CTkFrame(tab_frame)
+        # Buttons frame - FIXED AT TOP
+        buttons_frame = ctk.CTkFrame(tab_frame, height=60)
         buttons_frame.pack(fill="x", padx=10, pady=(10, 5))
+        buttons_frame.pack_propagate(False)
+        
+        # Button container for horizontal layout
+        button_container = ctk.CTkFrame(buttons_frame, fg_color="transparent")
+        button_container.pack(fill="both", expand=True, padx=10, pady=10)
         
         # Add button
         add_btn = ctk.CTkButton(
-            buttons_frame,
+            button_container,
             text="➕ Add App",
             command=self._add_app,
-            width=120
+            width=130,
+            height=35
         )
         add_btn.pack(side="left", padx=5, pady=5)
 
         # Refresh button
         refresh_btn = ctk.CTkButton(
-            buttons_frame,
+            button_container,
             text="🔄 Refresh",
             command=self._load_data,
-            width=120
+            width=130,
+            height=35
         )
         refresh_btn.pack(side="left", padx=5, pady=5)
 
-        # Configured apps list
+        # Configured apps list (expands to fill space)
         self.configured_apps_frame = ctk.CTkScrollableFrame(tab_frame)
-        self.configured_apps_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        self.configured_apps_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
         self._bind_mousewheel(self.configured_apps_frame)
         
-        # App info frame
-        self.info_frame = ctk.CTkFrame(tab_frame, height=150)
-        self.info_frame.pack(fill="x", padx=10, pady=(10, 20))
+        # App info frame - FIXED AT BOTTOM
+        self.info_frame = ctk.CTkFrame(tab_frame, height=100)
+        self.info_frame.pack(fill="x", side="bottom", padx=10, pady=(0, 10))
         self.info_frame.pack_propagate(False)
         
         self.info_label = ctk.CTkLabel(
@@ -119,31 +126,37 @@ class AppsView(BaseView):
         """Build the installed apps tab."""
         tab_frame = self.tabview.tab("Installed Apps")
         
-        # Header
-        header_frame = ctk.CTkFrame(tab_frame)
+        # Header - FIXED AT TOP
+        header_frame = ctk.CTkFrame(tab_frame, height=60)
         header_frame.pack(fill="x", padx=10, pady=(10, 5))
+        header_frame.pack_propagate(False)
+        
+        # Button container for horizontal layout
+        button_container = ctk.CTkFrame(header_frame, fg_color="transparent")
+        button_container.pack(fill="both", expand=True, padx=10, pady=10)
         
         # Refresh button
         refresh_btn = ctk.CTkButton(
-            header_frame,
+            button_container,
             text="🔄 Refresh Installed Apps",
             command=self._load_installed_apps,
-            width=200
+            width=200,
+            height=35
         )
         refresh_btn.pack(side="left", padx=5, pady=5)
         
         # Device status
         self.device_status_label = ctk.CTkLabel(
-            header_frame,
+            button_container,
             text="Loading...",
             font=ctk.CTkFont(size=12),
             text_color="#888888"
         )
-        self.device_status_label.pack(side="right", padx=10, pady=5)
+        self.device_status_label.pack(side="right", padx=10, pady=10)
         
-        # Installed apps list
+        # Installed apps list (expands to fill space)
         self.installed_apps_frame = ctk.CTkScrollableFrame(tab_frame)
-        self.installed_apps_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        self.installed_apps_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
         self._bind_mousewheel(self.installed_apps_frame)
 
         # Show placeholder message initially

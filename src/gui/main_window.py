@@ -39,6 +39,7 @@ class MainWindow(ctk.CTk):
         # Configure window
         self.title("Android App Auto Tester")
         self.geometry("1200x800")
+        self.minsize(800, 600)
         
         # Set theme
         ctk.set_appearance_mode("dark")
@@ -58,26 +59,25 @@ class MainWindow(ctk.CTk):
         self._show_devices_view()
     
     def _build_ui(self):
-        """Build main UI layout."""
+        """Build main UI layout using pack system."""
         # Create main frame
         self.main_frame = ctk.CTkFrame(self)
         self.main_frame.pack(fill="both", expand=True, padx=10, pady=10)
         
-        # Create header
+        # Create header (fixed height at top)
         self._build_header()
         
-        # Create content area
+        # Create navigation FIRST (fixed height at bottom - always visible)
+        self._build_navigation()
+        
+        # Create content area LAST (expands to fill remaining space)
         self.content_frame = ctk.CTkFrame(self.main_frame)
         self.content_frame.pack(fill="both", expand=True, pady=(10, 0))
-        
-        # Create navigation
-        self._build_navigation()
     
     def _build_header(self):
-        """Build header section."""
-        header_frame = ctk.CTkFrame(self.main_frame, height=80)
+        """Build header section using pack layout."""
+        header_frame = ctk.CTkFrame(self.main_frame)
         header_frame.pack(fill="x", pady=(0, 10))
-        header_frame.pack_propagate(False)
         
         # Title
         title_label = ctk.CTkLabel(
@@ -88,7 +88,7 @@ class MainWindow(ctk.CTk):
         title_label.pack(side="left", padx=20, pady=15)
         
         # Status container
-        status_container = ctk.CTkFrame(header_frame)
+        status_container = ctk.CTkFrame(header_frame, fg_color="transparent")
         status_container.pack(side="right", padx=20, pady=10)
         
         # Device status
@@ -109,53 +109,62 @@ class MainWindow(ctk.CTk):
         self.status_label.pack(anchor="e", padx=10, pady=(0, 5))
     
     def _build_navigation(self):
-        """Build navigation bar."""
-        nav_frame = ctk.CTkFrame(self.main_frame, height=50)
+        """Build navigation bar with fixed height using pack layout."""
+        nav_frame = ctk.CTkFrame(self.main_frame, height=60)
         nav_frame.pack(fill="x", side="bottom")
-        nav_frame.pack_propagate(False)
+        nav_frame.pack_propagate(False)  # Prevent frame from shrinking
+        
+        # Button container for horizontal layout - smaller padding
+        button_container = ctk.CTkFrame(nav_frame, fg_color="transparent")
+        button_container.pack(fill="both", expand=True, padx=10, pady=2)
         
         # Navigation buttons
         self.devices_btn = ctk.CTkButton(
-            nav_frame,
+            button_container,
             text="Devices",
             command=self._show_devices_view,
-            width=100
+            width=100,
+            height=32
         )
-        self.devices_btn.pack(side="left", padx=5, pady=10)
+        self.devices_btn.pack(side="left", padx=5, pady=2)
         
         self.apps_btn = ctk.CTkButton(
-            nav_frame,
+            button_container,
             text="Apps",
             command=self._show_apps_view,
-            width=100
+            width=100,
+            height=32
         )
-        self.apps_btn.pack(side="left", padx=5, pady=10)
+        self.apps_btn.pack(side="left", padx=5, pady=2)
         
         self.config_btn = ctk.CTkButton(
-            nav_frame,
+            button_container,
             text="Config",
             command=self._show_config_view,
-            width=100
+            width=100,
+            height=32
         )
-        self.config_btn.pack(side="left", padx=5, pady=10)
+        self.config_btn.pack(side="left", padx=5, pady=2)
         
         self.test_btn = ctk.CTkButton(
-            nav_frame,
+            button_container,
             text="Test",
             command=self._show_test_view,
             width=100,
+            height=32,
             fg_color="#2CC985",  # Green
             hover_color="#1FA868"
         )
-        self.test_btn.pack(side="left", padx=5, pady=10)
+        self.test_btn.pack(side="left", padx=5, pady=2)
         
         self.report_btn = ctk.CTkButton(
-            nav_frame,
+            button_container,
             text="Report",
             command=self._show_report_view,
-            width=100
+            width=100,
+            height=32
         )
-        self.report_btn.pack(side="left", padx=5, pady=10)
+        self.report_btn.pack(side="left", padx=5, pady=2)
     
     def _clear_content(self):
         """Clear the content frame."""

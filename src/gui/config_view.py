@@ -42,36 +42,43 @@ class ConfigView(BaseView):
         self.entries = {}
 
     def _build_ui(self):
-        """Build config view UI."""
+        """Build config view UI with fixed bottom buttons."""
         # Title
         self._build_title("Global Settings")
 
-        # Settings frame
-        self.settings_frame = self._build_scrollable_frame(height=450)
+        # Scrollable settings frame (expands to fill space)
+        self.settings_frame = self._build_scrollable_frame(height=None)
 
-        # Buttons frame
-        buttons_frame = ctk.CTkFrame(self)
-        buttons_frame.pack(fill="x", padx=10, pady=(10, 20))
+        # Buttons frame - FIXED AT BOTTOM
+        buttons_frame = ctk.CTkFrame(self, height=80)
+        buttons_frame.pack(fill="x", side="bottom", padx=10, pady=(0, 10))
+        buttons_frame.pack_propagate(False)  # Prevent frame from shrinking
+
+        # Button container for horizontal layout
+        button_container = ctk.CTkFrame(buttons_frame, fg_color="transparent")
+        button_container.pack(fill="both", expand=True, padx=10, pady=10)
 
         # Save button
         save_btn = ctk.CTkButton(
-            buttons_frame,
+            button_container,
             text="💾 Save",
             command=self._save_settings,
-            width=120
+            width=130,
+            height=35
         )
-        save_btn.pack(side="left", padx=5, pady=10)
+        save_btn.pack(side="left", padx=5, pady=5)
 
         # Reset button
         reset_btn = ctk.CTkButton(
-            buttons_frame,
+            button_container,
             text="🔄 Reset",
             command=self._reset_settings,
-            width=120,
+            width=130,
+            height=35,
             fg_color="#DC3545",
             hover_color="#BB2D3B"
         )
-        reset_btn.pack(side="left", padx=5, pady=10)
+        reset_btn.pack(side="left", padx=5, pady=5)
     
     def _load_data(self):
         """Load and display settings."""

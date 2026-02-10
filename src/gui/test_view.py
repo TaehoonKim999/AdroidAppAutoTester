@@ -13,6 +13,10 @@ from ..config_manager import ConfigManager, AppConfig, get_global_settings
 from ..report_generator import get_report_generator
 from .base_view import BaseView
 
+from ..utils.logger import get_logger
+
+logger = get_logger(__name__)
+
 
 class TestView(BaseView):
     """
@@ -54,7 +58,7 @@ class TestView(BaseView):
         self.running = False
 
     def _build_ui(self):
-        """Build test view UI."""
+        """Build test view UI using pack layout with fixed bottom buttons."""
         try:
             # Title
             self._build_title("Run Tests")
@@ -65,14 +69,26 @@ class TestView(BaseView):
                 text="Device: Not connected",
                 font=ctk.CTkFont(size=14)
             )
-            self.device_status_label.pack(pady=(0, 10))
+            self.device_status_label.pack(fill="x", pady=(0, 10), padx=10)
         except Exception as e:
             logger.error(f"Failed to build title: {e}")
         
         try:
-            # Apps selection frame
-            apps_frame = ctk.CTkFrame(self)
-            apps_frame.pack(fill="x", padx=10, pady=(0, 10))
+            # Scrollable content frame (expands to fill space)
+            self.content_scrollable = ctk.CTkScrollableFrame(
+                self,
+                label_text=""
+            )
+            self.content_scrollable.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        except Exception as e:
+            logger.error(f"Failed to create scrollable frame: {e}")
+            self.content_scrollable = None
+            return
+        
+        try:
+            # Apps selection frame (inside scrollable)
+            apps_frame = ctk.CTkFrame(self.content_scrollable)
+            apps_frame.pack(fill="x", pady=(0, 10))
             
             apps_label = ctk.CTkLabel(
                 apps_frame,
@@ -93,17 +109,22 @@ class TestView(BaseView):
             logger.error(f"Failed to build apps selection frame: {e}")
         
         try:
-            # Apps list
-            self.apps_frame = self._build_scrollable_frame(height=200)
+            # Apps list (inside scrollable) - create directly instead of using helper
+            self.apps_frame = ctk.CTkScrollableFrame(
+                self.content_scrollable,
+                height=200,
+                label_text=""
+            )
+            self.apps_frame.pack(fill="x", pady=(0, 10))
+            self._bind_mousewheel(self.apps_frame)
         except Exception as e:
             logger.error(f"Failed to build apps frame: {e}")
             self.apps_frame = None
         
         try:
-            # Progress frame
-            progress_frame = ctk.CTkFrame(self, height=250)
-            progress_frame.pack(fill="x", padx=10, pady=(0, 10))
-            progress_frame.pack_propagate(False)
+            # Progress frame (inside scrollable)
+            progress_frame = ctk.CTkFrame(self.content_scrollable)
+            progress_frame.pack(fill="x", pady=(0, 10))
             
             self.progress_label = ctk.CTkLabel(
                 progress_frame,
@@ -130,7 +151,7 @@ class TestView(BaseView):
             
             self.log_text = ctk.CTkTextbox(
                 progress_frame,
-                height=100,
+                height=150,
                 font=ctk.CTkFont(family="Consolas", size=10)
             )
             self.log_text.pack(fill="both", expand=True, padx=10, pady=(0, 10))
@@ -139,41 +160,49 @@ class TestView(BaseView):
             logger.error(f"Failed to build progress frame: {e}")
         
         try:
-            # Buttons frame
-            buttons_frame = ctk.CTkFrame(self)
-            buttons_frame.pack(fill="x", padx=10, pady=(10, 20))
+            # Buttons frame - FIXED AT BOTTOM (packed after scrollable)
+            buttons_frame = ctk.CTkFrame(self, height=80)
+            buttons_frame.pack(fill="x", side="bottom", padx=10, pady=(0, 10))
+            buttons_frame.pack_propagate(False)  # Prevent frame from shrinking
+            
+            # Button container for horizontal layout
+            button_container = ctk.CTkFrame(buttons_frame, fg_color="transparent")
+            button_container.pack(fill="both", expand=True, padx=10, pady=10)
             
             # Run button
             self.run_btn = ctk.CTkButton(
-                buttons_frame,
+                button_container,
                 text="▶️ Run Tests",
                 command=self._run_tests,
-                width=150,
+                width=130,
+                height=35,
                 fg_color="#28A745",
                 hover_color="#218838"
             )
-            self.run_btn.pack(side="left", padx=5, pady=10)
+            self.run_btn.pack(side="left", padx=5, pady=5)
             
             # Stop button
             self.stop_btn = ctk.CTkButton(
-                buttons_frame,
+                button_container,
                 text="⏹ Stop",
                 command=self._stop_tests,
-                width=150,
+                width=130,
+                height=35,
                 fg_color="#DC3545",
                 hover_color="#BB2D3B"
             )
-            self.stop_btn.pack(side="left", padx=5, pady=10)
+            self.stop_btn.pack(side="left", padx=5, pady=5)
             self.stop_btn.configure(state="disabled")
             
             # Clear log button
             clear_btn = ctk.CTkButton(
-                buttons_frame,
+                button_container,
                 text="🗑 Clear Log",
                 command=self._clear_log,
-                width=150
+                width=130,
+                height=35
             )
-            clear_btn.pack(side="left", padx=5, pady=10)
+            clear_btn.pack(side="left", padx=5, pady=5)
         except Exception as e:
             logger.error(f"Failed to build buttons frame: {e}")
     
